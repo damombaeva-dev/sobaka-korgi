@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Сводка</title>
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="yandex" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Лента: дни сверху вниз, внутри дня ответы поставщиков по времени; клик по позиции открывает историю цены */
+:root{
+  --bg:#f1f4f0;--surface:#fff;--text:#1f2a24;--muted:#6b7a71;--line:#dfe6e0;--line2:#edf1ed;--chip:#eef2ee;
+  --accent:#4f7a63;--on-accent:#fff;--ring:rgba(79,122,99,.18);
+  --up:#b54034;--up-bg:#fbeeec;--down:#2f7a4f;--down-bg:#eaf5ee;--warn:#a5650f;--warn-bg:#fcf3e3;--info:#3563a8;--info-bg:#ecf2fb;
+  --shade:rgba(20,30,25,.35);
+  --font:Inter,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+:root[data-pal="dark"]{
+  color-scheme:dark;--bg:#1f2228;--surface:#282c34;--text:#e3e6ec;--muted:#9aa1ad;--line:#363b45;--line2:#30353e;--chip:#30353e;
+  --accent:#d9a46c;--on-accent:#1f2228;--ring:rgba(217,164,108,.2);
+  --up:#f0968c;--up-bg:#3b2b2d;--down:#8fd1a8;--down-bg:#263a2f;--warn:#e6c07b;--warn-bg:#3a3326;--info:#a3c1f2;--info-bg:#28334a;--shade:rgba(0,0,0,.55);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:15.5px/1.5 var(--font);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;transition:background .2s}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:880px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--bg)}
+.topin{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding-block:12px}
+.brand{display:flex;flex-direction:column;margin-right:auto;min-width:0}
+.brand b{font-size:17px;letter-spacing:-.01em}
+.brand span{font-size:12.5px;color:var(--muted)}
+.pals{display:flex;gap:6px}
+.pal{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 11px 5px 5px;font-size:13px}
+.pal[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--ring)}
+.sw{width:20px;height:20px;border-radius:50%}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-block:18px 8px}
+.search{flex:1 1 240px;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;outline:none}
+.search:focus,.date:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--ring)}
+.segs{display:flex;gap:6px;flex-wrap:wrap}
+.seg{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-size:14px}
+.seg[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.date{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;font-size:14px}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cats{padding-block:0 10px}
+.day{margin-top:26px}
+.dayh{display:flex;align-items:baseline;gap:10px;margin:0 0 14px;font-size:19px;letter-spacing:-.01em}
+.dayh small{font-size:13px;color:var(--muted);font-weight:500}
+.tl{position:relative;padding-left:84px}
+.tl::before{content:"";position:absolute;left:62px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.ev{position:relative;margin-bottom:16px}
+.tm{position:absolute;left:-84px;top:12px;width:52px;text-align:right;font-weight:700;color:var(--accent);font-size:14px}
+.ev::before{content:"";position:absolute;left:-28px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:3px solid var(--accent)}
+.bx{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+.bx h3{margin:0;font-size:16px}
+.bx .ds{color:var(--muted);font-size:13px;margin-bottom:6px}
+.ln{display:flex;justify-content:space-between;gap:12px;width:100%;text-align:left;border:0;background:none;padding:9px 0;border-top:1px solid var(--line2);border-radius:0}
+.ln:hover .n b{color:var(--accent)}
+.n{min-width:0}
+.n b{font-weight:500;font-size:14.5px}
+.n small{display:block;color:var(--muted);font-size:12.5px}
+.p{text-align:right;white-space:nowrap}
+.p b{display:block;font-size:16.5px}
+.p small{display:block;color:var(--muted);font-size:12px}
+.d{display:inline-block;font-size:12px;font-weight:600;border-radius:6px;padding:1px 7px;white-space:nowrap}
+.d-up{color:var(--up);background:var(--up-bg)}.d-down{color:var(--down);background:var(--down-bg)}
+.nt{display:inline-block;font-size:12px;color:var(--warn);background:var(--warn-bg);border-radius:6px;padding:0 6px;margin-top:3px}
+.ev.w::before{border-color:var(--muted)}
+.ev.w .bx{background:transparent;border-style:dashed}
+.ev.w .tm{color:var(--muted)}
+.pd{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line2);list-style:none}
+.pd:first-child{border-top:0}
+.pd small{display:block;color:var(--muted);font-size:13px}
+.st{font-size:12px;font-weight:600;border-radius:6px;padding:2px 8px;white-space:nowrap;align-self:flex-start}
+.st-wait{background:var(--warn-bg);color:var(--warn)}.st-file{background:var(--info-bg);color:var(--info)}.st-none{background:var(--up-bg);color:var(--up)}
+ul{margin:0;padding:0}
+.empty{padding:48px 12px;text-align:center;color:var(--muted)}
+.note{color:var(--muted);font-size:12.5px;padding-block:28px 48px}
+/* history drawer */
+.shade{position:fixed;inset:0;background:var(--shade);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--surface);z-index:41;overflow:auto;padding:calc(20px + env(safe-area-inset-top,0px)) max(22px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) 22px;box-shadow:-10px 0 30px rgba(0,0,0,.12)}
+.drawer h2{margin:6px 0 2px;font-size:20px;letter-spacing:-.01em;text-wrap:balance}
+.drawer .sub{color:var(--muted);font-size:13.5px}
+.close{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));border:1px solid var(--line);background:var(--surface);border-radius:8px;width:34px;height:34px;font-size:18px;line-height:1}
+.now{font-size:34px;font-weight:700;letter-spacing:-.02em;margin:16px 0 4px}
+.chart{margin:14px 0 6px;background:var(--bg);border-radius:12px;padding:10px}
+.chart svg{display:block;width:100%;height:auto}
+.hl{list-style:none;margin-top:10px}
+.hl li{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line2)}
+.hl li small{display:block;color:var(--muted);font-size:12.5px}
+dl{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;margin:18px 0;font-size:14px}
+dt{color:var(--muted)}dd{margin:0}
+@media(max-width:600px){.tl{padding-left:64px}.tl::before{left:46px}.tm{left:-64px;width:40px;font-size:12.5px}.ev::before{left:-24px}.pal span.lbl{display:none}.pal{padding:5px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head><body>
+
+<div class="top"><div class="wrap topin">
+  <div class="brand"><b>Лента цен поставщиков</b><span>внутренняя сводка</span></div>
+  <div class="pals" id="pals">
+    <button type="button" class="pal" data-k="sage" aria-pressed="true"><span class="sw" style="background:#4f7a63;box-shadow:inset 0 0 0 5px #f1f4f0"></span><span class="lbl">Шалфей</span></button>
+    <button type="button" class="pal" data-k="dark" aria-pressed="false"><span class="sw" style="background:#d9a46c;box-shadow:inset 0 0 0 5px #1f2228"></span><span class="lbl">Вечерний</span></button>
+  </div>
+</div></div>
+
+<main class="wrap">
+  <div class="controls">
+    <input id="q" class="search" type="search" placeholder="Поиск: товар, марка, поставщик" aria-label="Поиск">
+    <div class="segs" id="per">
+      <button type="button" class="seg" data-p="day" aria-pressed="true">День</button>
+      <button type="button" class="seg" data-p="week" aria-pressed="false">Неделя</button>
+      <button type="button" class="seg" data-p="all" aria-pressed="false">Всё</button>
+    </div>
+    <input id="date" class="date" type="date" aria-label="Выбрать день">
+  </div>
+  <div class="segs cats" id="cats"></div>
+  <div id="out"><div class="empty">Загружаю цены…</div></div>
+  <p class="note">Цены закупочные, как их дал поставщик; НДС не указан, если не сказано иное (по рабочей таблице: какао, кокос, ЛЗМК, ЭКМ 10%, пальма 22%). ▲▼ — изменение к предыдущей цене того же поставщика на ту же позицию. Нажмите на позицию, чтобы увидеть историю цены. Перед предложением клиенту подтвердите цену у поставщика.</p>
+</main>
+<div id="drawerRoot"></div>
+
+<script>
+(function(){
+const root=document.documentElement;
+const PKEY="qm17-pal";
+function applyPal(k){root.dataset.pal=k==="dark"?"dark":"";if(k!=="dark")delete root.dataset.pal;document.querySelectorAll(".pal").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===k));}
+let pal="sage";try{const v=localStorage.getItem(PKEY);if(v==="dark"||v==="sage")pal=v;}catch(e){}
+applyPal(pal);
+document.getElementById("pals").addEventListener("click",e=>{const b=e.target.closest(".pal");if(!b)return;applyPal(b.dataset.k);try{localStorage.setItem(PKEY,b.dataset.k)}catch(e){}});
+
+const CATS={cocoa:"Какао-продукты",palm:"Пальмовое масло",coconut:"Кокосовое масло",fat:"Спецжиры (ЛЗМК, ЭКМ)"};
+const S={q:"",cat:"",per:"day",day:null};
+let PRICES=[],PENDING=[];
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=(v,c)=>c==="RUB"?Number(v).toLocaleString("ru-RU")+" ₽":"$"+Number(v).toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:3});
+const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const WD=["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
+const dt=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const todayIso=iso(new Date());
+function dayTitle(s){const d=dt(s);const t=d.getDate()+" "+MON[d.getMonth()];const y=iso(new Date(Date.now()-864e5));const w=WD[d.getDay()];return s===todayIso?["Сегодня, "+t,w]:s===y?["Вчера, "+t,w]:[t+(d.getFullYear()!==new Date().getFullYear()?" "+d.getFullYear():""),w]}
+const short=s=>{const d=dt(s);return d.getDate()+" "+MON[d.getMonth()].slice(0,3)+"."};
+
+function prevOf(r){let best=null;for(const x of PRICES){if(x.key===r.key&&x.cur===r.cur&&(x.date<r.date||(x.date===r.date&&(x.time||"")<(r.time||"")))){if(!best||x.date>best.date||(x.date===best.date&&(x.time||"")>(best.time||"")))best=x}}return best}
+function delta(r){const p=prevOf(r);if(!p||p.price===r.price)return "";const d=r.price-p.price,pc=Math.abs(d/p.price*100).toFixed(1).replace(".",",");return `<span class="d ${d>0?"d-up":"d-down"}" title="Было ${esc(fmt(p.price,p.cur))} (${short(p.date)})">${d>0?"▲":"▼"} ${pc}%</span>`}
+const sub=r=>[r.spec,r.origin,r.pack,r.qty&&r.qty!=="склад"?r.qty:"",r.delivery&&r.delivery!=="со склада"?r.delivery:""].filter(Boolean).join(" · ");
+
+function dates(){return [...new Set(PRICES.map(r=>r.date))].sort().reverse()}
+function inPeriod(r){if(S.per==="all")return true;const ds=dates();const anchor=S.day||ds[0];if(S.per==="day")return r.date===anchor;const a=dt(anchor),from=iso(new Date(a.getFullYear(),a.getMonth(),a.getDate()-6));return r.date>=from&&r.date<=anchor}
+function match(r){const q=S.q.trim().toLowerCase();return(!S.cat||r.cat===S.cat)&&(!q||[r.product,r.group,r.supplier,r.spec,r.origin,r.pack].join(" ").toLowerCase().includes(q))}
+
+function render(){
+  const out=document.getElementById("out");
+  if(!PRICES.length){out.innerHTML='<div class="empty">Цен пока нет. Они появятся здесь, как только поставщики ответят.</div>';return}
+  const ds=dates();if(!S.day)S.day=ds[0];document.getElementById("date").value=S.day;
+  const rows=PRICES.filter(r=>inPeriod(r)&&match(r));
+  const byDay={};rows.forEach(r=>(byDay[r.date]=byDay[r.date]||[]).push(r));
+  const days=Object.keys(byDay).sort().reverse();
+  const pend=PENDING.filter(p=>S.per==="day"?p.date===S.day:inPeriod({date:p.date}));
+  if(!days.length&&!pend.length){out.innerHTML=`<div class="empty">За ${S.per==="day"?esc(dayTitle(S.day)[0].toLowerCase()):"этот период"} цен не найдено.</div>`;return}
+  let h="";
+  const showDays=[...new Set([...days,...pend.map(p=>p.date)])].sort().reverse();
+  for(const d of showDays){
+    const [t,w]=dayTitle(d);const a=byDay[d]||[];
+    const ev={};a.forEach(r=>{const k=(r.time||"—")+"|"+r.supplier;(ev[k]=ev[k]||[]).push(r)});
+    h+=`<section class="day"><h2 class="dayh">${esc(t)} <small>${w} · ${a.length} поз.</small></h2><div class="tl">`;
+    for(const k of Object.keys(ev).sort()){const [tm,s]=k.split("|"),it=ev[k];
+      h+=`<div class="ev"><div class="tm">${tm==="—"?"":esc(tm)}</div><div class="bx"><h3>${esc(s)}</h3><div class="ds">${it.length} поз.${it[0].terms?" · "+esc(it[0].terms):""}</div>`+
+      it.map(r=>`<button type="button" class="ln" data-id="${esc(r._id)}"><span class="n"><b>${esc(r.product)}</b><small>${esc(sub(r))}</small>${r.note?`<span class="nt">${esc(r.note)}</span>`:""}</span><span class="p"><b>${fmt(r.price,r.cur)}</b>${delta(r)}</span></button>`).join("")+`</div></div>`}
+    const pd=pend.filter(p=>p.date===d);
+    if(pd.length)h+=`<div class="ev w"><div class="tm">позже</div><div class="bx"><h3>Ждём ответа</h3><ul>${pd.map(p=>`<li class="pd"><span><b>${esc(p.s)}</b><small>${esc(p.what)}. ${esc(p.note)}</small></span><span class="st st-${esc(p.st)}">${({wait:"ждём",file:"файл",none:"нет ответа"})[p.st]||""}</span></li>`).join("")}</ul></div></div>`;
+    h+=`</div></section>`;
+  }
+  out.innerHTML=h;
+}
+
+function chart(hist){
+  if(hist.length<2)return"";
+  const W=400,H=130,P=28,vals=hist.map(r=>r.price),mn=Math.min(...vals),mx=Math.max(...vals),span=mx-mn||mx*0.05||1;
+  const x=i=>P+i*(W-2*P)/(hist.length-1),y=v=>H-22-(v-mn)/span*(H-44);
+  const pts=hist.map((r,i)=>x(i)+","+y(r.price)).join(" ");
+  const area=`M${x(0)},${H-22} L`+hist.map((r,i)=>x(i)+","+y(r.price)).join(" L")+` L${x(hist.length-1)},${H-22} Z`;
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="График цены"><path d="${area}" fill="var(--ring)"/><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`+
+  hist.map((r,i)=>`<circle cx="${x(i)}" cy="${y(r.price)}" r="${i===hist.length-1?5:3.5}" fill="var(--accent)"/><text x="${x(i)}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--muted)">${short(r.date)}</text><text x="${x(i)}" y="${y(r.price)-9}" text-anchor="middle" font-size="11" fill="var(--text)">${esc(fmt(r.price,r.cur).replace(/ ₽/,"₽"))}</text>`).join("")+`</svg></div>`;
+}
+function openHist(id){
+  const r=PRICES.find(x=>x._id===id);if(!r)return;
+  const hist=PRICES.filter(x=>x.key===r.key&&x.cur===r.cur).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+  const last=hist[hist.length-1];
+  const others=PRICES.filter(x=>x.group===r.group&&x.supplier!==r.supplier&&x.cur===r.cur&&x.date>=iso(new Date(dt(last.date).getTime()-6*864e5)));
+  document.getElementById("drawerRoot").innerHTML=`<div class="shade" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="История цены"><button type="button" class="close" data-close aria-label="Закрыть">×</button>
+  <div class="sub">${esc(CATS[r.cat]||"")} · ${esc(r.group)}</div><h2>${esc(r.product)}</h2><div class="sub">${esc(r.supplier)}${[r.spec,r.origin,r.pack].filter(Boolean).length?" · "+esc([r.spec,r.origin,r.pack].filter(Boolean).join(" · ")):""}</div>
+  <div class="now">${fmt(last.price,last.cur)} <span class="sub" style="font-size:14px;font-weight:500">за кг</span></div><div class="sub">последняя цена: ${short(last.date)}${last.time?", "+esc(last.time):""}</div>
+  ${chart(hist)}
+  <dl><dt>Объём</dt><dd>${esc(last.qty||"—")}</dd><dt>Поставка</dt><dd>${esc(last.delivery||"—")}</dd><dt>Условия</dt><dd>${esc(last.terms||"—")}</dd>${last.note?`<dt>Примечание</dt><dd>${esc(last.note)}</dd>`:""}</dl>
+  <h3 style="font-size:15px;margin:18px 0 0">История цены</h3><ul class="hl">${hist.slice().reverse().map(x=>`<li><span>${short(x.date)}${x.time?", "+esc(x.time):""}<small>${esc(x.delivery||"")}</small></span><b>${fmt(x.price,x.cur)}</b></li>`).join("")}</ul>
+  ${others.length?`<h3 style="font-size:15px;margin:22px 0 0">У других поставщиков за неделю</h3><ul class="hl">${others.map(x=>`<li><span>${esc(x.supplier)}<small>${esc(x.product)} · ${short(x.date)}</small></span><b>${fmt(x.price,x.cur)}</b></li>`).join("")}</ul>`:""}
+  </aside>`;
+  document.querySelector(".drawer .close").focus();
+}
+function closeHist(){document.getElementById("drawerRoot").innerHTML=""}
+document.getElementById("drawerRoot").addEventListener("click",e=>{if(e.target.closest("[data-close]"))closeHist()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeHist()});
+document.getElementById("out").addEventListener("click",e=>{const b=e.target.closest(".ln");if(b)openHist(b.dataset.id)});
+
+document.getElementById("q").addEventListener("input",e=>{S.q=e.target.value;render()});
+document.getElementById("per").addEventListener("click",e=>{const b=e.target.closest(".seg");if(!b)return;S.per=b.dataset.p;document.querySelectorAll("#per .seg").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
+document.getElementById("date").addEventListener("change",e=>{if(!e.target.value)return;S.day=e.target.value;if(S.per==="all"){S.per="day";document.querySelectorAll("#per .seg").forEach(x=>x.setAttribute("aria-pressed",x.dataset.p==="day"))}render()});
+const cats=document.getElementById("cats");
+cats.innerHTML=[["","Все товары"],...Object.entries(CATS)].map(([k,n])=>`<button type="button" class="seg" data-c="${k}" aria-pressed="${k===""}">${n}</button>`).join("");
+cats.addEventListener("click",e=>{const b=e.target.closest(".seg");if(!b)return;S.cat=b.dataset.c;cats.querySelectorAll(".seg").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
+
+(async()=>{
+  const out=document.getElementById("out");
+  try{const r=await fetch("data/prices.json?t="+Date.now(),{cache:"no-store"});const j=await r.json();PRICES=j.prices||[];PENDING=j.pending||[];
+    if(j.updated){const u=new Date(j.updated);document.querySelector(".brand span").textContent="обновлено "+u.toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"});}
+    render();}catch(e){out.innerHTML='<div class="empty">Не удалось загрузить цены. Обновите страницу.</div>'}
+})();
+})();
+</script>
+
+</body></html>
