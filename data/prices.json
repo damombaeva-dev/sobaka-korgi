@@ -1452,13 +1452,13 @@
    "note": "цена под подписываемую спецификацию; источник: рабочий чат"
   },
   {
-   "_id": "2026-10-30_premium-unspecified_0901",
+   "_id": "2026-10-30_premium-coco-pvo_0901",
    "date": "2026-10-30",
    "time": "09:01",
-   "key": "premium-unspecified",
-   "cat": "other",
-   "group": "Без уточнения",
-   "product": "Товар в сообщении не назван",
+   "key": "premium-coco-pvo",
+   "cat": "coconut",
+   "group": "Кокосовое масло",
+   "product": "Кокосовое масло PVO",
    "supplier": "Премиум Ойл",
    "price": 3.38,
    "cur": "USD",
@@ -1468,7 +1468,7 @@
    "qty": "21 т",
    "delivery": "",
    "terms": "",
-   "note": "уточнить товар; источник: рабочий чат"
+   "note": "источник: рабочий чат"
   }
  ],
  "pending": [
