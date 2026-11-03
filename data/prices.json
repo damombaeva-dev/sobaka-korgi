@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-03T09:10:00+03:00",
+ "updated": "2026-11-03T09:45:00+03:00",
  "prices": [
   {
    "_id": "2026-11-02_natfood-icp",
@@ -1469,6 +1469,63 @@
    "delivery": "",
    "terms": "",
    "note": "Юлия Д. из MAX"
+  },
+  {
+   "_id": "2026-11-02_ppt-coco-iffco",
+   "date": "2026-11-02",
+   "time": "",
+   "key": "ppt-coco-iffco",
+   "cat": "coconut",
+   "group": "Кокосовое масло",
+   "product": "Кокосовое масло Iffco KS 25",
+   "supplier": "Петропродторг",
+   "price": 275,
+   "cur": "RUB",
+   "spec": "",
+   "origin": "Малайзия",
+   "pack": "",
+   "qty": "",
+   "delivery": "",
+   "terms": "",
+   "note": "предложено вместо Musim Mas за 270 ₽"
+  },
+  {
+   "_id": "2026-11-02_shokolate-dp250",
+   "date": "2026-11-02",
+   "time": "",
+   "key": "shokolate-dp250",
+   "cat": "cocoa",
+   "group": "Какао-порошок алкализованный",
+   "product": "Какао-порошок DP250",
+   "supplier": "Ваш Шоколатье",
+   "price": 10.32,
+   "cur": "USD",
+   "spec": "",
+   "origin": "",
+   "pack": "",
+   "qty": "",
+   "delivery": "в наличии",
+   "terms": "",
+   "note": "JB250 нет, предлагают DP250"
+  },
+  {
+   "_id": "2026-11-02_sell-jb250",
+   "date": "2026-11-02",
+   "time": "",
+   "key": "sell-jb250",
+   "cat": "cocoa",
+   "group": "Какао-порошок алкализованный",
+   "product": "Какао-порошок JB250",
+   "supplier": "СЕЛЛ-Сервис",
+   "price": 10.1,
+   "cur": "USD",
+   "spec": "",
+   "origin": "",
+   "pack": "",
+   "qty": "",
+   "delivery": "в наличии",
+   "terms": "",
+   "note": "склад уточняется"
   }
  ],
  "pending": [
