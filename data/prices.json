@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-06T13:05:00+03:00",
+ "updated": "2026-11-06T13:10:00+03:00",
  "prices": [
   {
    "_id": "2026-11-02_natfood-icp",
@@ -1735,6 +1735,63 @@
    "delivery": "",
    "terms": "",
    "note": "Юлия Д. из MAX; кокос от Брилевой (Петропродторг) через Штерн"
+  },
+  {
+   "_id": "2026-11-05_kontur-stearin",
+   "date": "2026-11-05",
+   "time": "",
+   "key": "kontur-stearin",
+   "cat": "palm",
+   "group": "Стеарин",
+   "product": "Пальмовый стеарин",
+   "supplier": "Оил де Люкс (Контур)",
+   "price": 2.75,
+   "cur": "USD",
+   "spec": "",
+   "origin": "",
+   "pack": "",
+   "qty": "запрос 30 т",
+   "delivery": "",
+   "terms": "предоплата, самовывоз",
+   "note": ""
+  },
+  {
+   "_id": "2026-11-06_dv-ekm",
+   "date": "2026-11-06",
+   "time": "12:47",
+   "key": "dv-ekm",
+   "cat": "fat",
+   "group": "ЭКМ",
+   "product": "ЭКМ",
+   "supplier": "ДВ Трейдинг",
+   "price": 4.52,
+   "cur": "USD",
+   "spec": "",
+   "origin": "",
+   "pack": "",
+   "qty": "запрос 60 т",
+   "delivery": "поставки с конца февраля 2027",
+   "terms": "",
+   "note": ""
+  },
+  {
+   "_id": "2026-11-06_dv-lecithin",
+   "date": "2026-11-06",
+   "time": "12:35",
+   "key": "dv-lecithin",
+   "cat": "other",
+   "group": "Лецитин",
+   "product": "Лецитин",
+   "supplier": "ДВ Трейдинг",
+   "price": 176,
+   "cur": "RUB",
+   "spec": "",
+   "origin": "",
+   "pack": "",
+   "qty": "запрос 20 т",
+   "delivery": "",
+   "terms": "",
+   "note": ""
   }
  ],
  "pending": [
