@@ -170,7 +170,7 @@ const CATS={cocoa:"Какао-продукты",palm:"Пальмовое мас�
 const S={q:"",cat:"",per:"day",day:null};
 let PRICES=[],PENDING=[];
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const fmt=(v,c)=>c==="RUB"?Number(v).toLocaleString("ru-RU")+" ₽":"$"+Number(v).toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:3});
+const fmt=(v,c)=>c==="RUB"?Number(v).toLocaleString("ru-RU")+" ₽":(c==="EUR"?"€":"$")+Number(v).toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:3});
 const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const WD=["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
 const dt=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
