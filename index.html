@@ -92,6 +92,17 @@ dl{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;margin:18px 0;font-
 dt{color:var(--muted)}dd{margin:0}
 @media(max-width:600px){.tl{padding-left:64px}.tl::before{left:46px}.tm{left:-64px;width:40px;font-size:12.5px}.ev::before{left:-24px}.pal span.lbl{display:none}.pal{padding:5px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.tabs{display:flex;gap:6px;margin:14px 0 4px}
+.tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 16px;font-size:15px;font-weight:600}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.ptab{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ptab th,.ptab td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.ptab th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+.ptab td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.ptab tr.sup td{background:transparent;font-weight:700;font-size:15px;padding-top:18px;border-bottom:2px solid var(--line)}
+.ptab .dash{color:var(--muted)}
+.ptab small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+@media (max-width:720px){.ptab thead{display:none}.ptab,.ptab tbody,.ptab tr,.ptab td{display:block;width:100%}.ptab tr{border-bottom:1px solid var(--line);padding:8px 0}.ptab td{border:0;padding:2px 12px}.ptab td.n:before{content:attr(data-l)": ";color:var(--muted)}.ptab td.n .dash{display:none}.ptab td.n:has(.dash){display:none}}
 </style>
 </head><body>
 
@@ -104,6 +115,11 @@ dt{color:var(--muted)}dd{margin:0}
 </div></div>
 
 <main class="wrap">
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab" role="tab" id="tb-prices" aria-selected="true" data-t="prices">Цены</button>
+    <button type="button" class="tab" role="tab" id="tb-pallets" aria-selected="false" data-t="pallets">Паллеты</button>
+  </div>
+  <section id="tabPrices">
   <div class="controls">
     <input id="q" class="search" type="search" placeholder="Поиск: товар, марка, поставщик" aria-label="Поиск">
     <div class="segs" id="per">
@@ -116,6 +132,13 @@ dt{color:var(--muted)}dd{margin:0}
   <div class="segs cats" id="cats"></div>
   <div id="out"><div class="empty">Загружаю цены…</div></div>
   <p class="note">Цены закупочные, как их дал поставщик; НДС не указан, если не сказано иное (по рабочей таблице: какао, кокос, ЛЗМК, ЭКМ 10%, пальма 22%). ▲▼ — изменение к предыдущей цене того же поставщика на ту же позицию. Нажмите на позицию, чтобы увидеть историю цены. Перед предложением клиенту подтвердите цену у поставщика.</p>
+  </section>
+  <section id="tabPallets" hidden>
+    <div class="controls"><input id="pq" class="search" type="search" placeholder="Поиск: товар или поставщик" aria-label="Поиск по паллетам"></div>
+    <div class="segs cats" id="psup"></div>
+    <div id="pout"><div class="empty">Загружаю справочник…</div></div>
+    <p class="note">Справочник: вес сырья в коробке или мешке, формат паллеты, вес сырья на паллете и её размеры. Американка — 1200×1000, европаллета — 1200×800. Прочерк — данных пока нет.</p>
+  </section>
 </main>
 <div id="drawerRoot"></div>
 
@@ -216,6 +239,20 @@ cats.addEventListener("click",e=>{const b=e.target.closest(".seg");if(!b)return;
     if(j.updated){const u=new Date(j.updated);document.querySelector(".brand span").textContent="обновлено "+u.toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"});}
     render();}catch(e){out.innerHTML='<div class="empty">Не удалось загрузить цены. Обновите страницу.</div>'}
 })();
+/* ---- Паллеты ---- */
+let PAL=null;const P={q:"",s:""};
+const dash='<span class="dash">—</span>';
+function renderPal(){if(!PAL)return;const q=P.q.toLowerCase();const rows=PAL.filter(r=>(!P.s||r.s===P.s)&&(!q||(r.name+" "+r.s+" "+r.note).toLowerCase().includes(q)));
+ if(!rows.length){document.getElementById("pout").innerHTML='<div class="empty">Ничего не найдено</div>';return}
+ let h='<table class="ptab"><thead><tr><th>Сырьё</th><th>Коробка / мешок</th><th>Формат паллеты</th><th>Вес на паллете</th><th>Размер, мм</th></tr></thead><tbody>',cur=null;
+ for(const r of rows){if(r.s!==cur){cur=r.s;h+=`<tr class="sup"><td colspan="5">${esc(cur)}</td></tr>`}
+  h+=`<tr><td><b>${esc(r.name)}</b>${r.note?`<small>${esc(r.note)}</small>`:""}</td><td class="n" data-l="Упаковка">${r.unit?esc(r.unit):dash}</td><td class="n" data-l="Паллета">${r.fmt?esc(r.fmt):dash}</td><td class="n" data-l="На паллете">${r.kg?esc(r.kg):dash}</td><td class="n" data-l="Размер">${r.size?esc(r.size.replace("*","×")):dash}</td></tr>`}
+ document.getElementById("pout").innerHTML=h+'</tbody></table>'}
+function loadPal(){if(PAL)return;fetch("data/pallets.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(j=>{PAL=j.rows||[];const sups=[...new Set(PAL.map(r=>r.s))];const box=document.getElementById("psup");box.innerHTML=[["","Все поставщики"],...sups.map(x=>[x,x])].map(([k,n])=>`<button type="button" class="seg" data-s="${esc(k)}" aria-pressed="${k===""}">${esc(n)}</button>`).join("");box.addEventListener("click",e=>{const b=e.target.closest(".seg");if(!b)return;P.s=b.dataset.s;box.querySelectorAll(".seg").forEach(x=>x.setAttribute("aria-pressed",x===b));renderPal()});renderPal()}).catch(()=>{document.getElementById("pout").innerHTML='<div class="empty">Не удалось загрузить справочник</div>'})}
+document.getElementById("pq").addEventListener("input",e=>{P.q=e.target.value.trim();renderPal()});
+function showTab(t){const pal=t==="pallets";document.getElementById("tabPrices").hidden=pal;document.getElementById("tabPallets").hidden=!pal;document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t));if(pal)loadPal();if(location.hash!==(pal?"#pallets":"")&&!(location.hash===""&&!pal))history.replaceState(null,"",pal?"#pallets":location.pathname+location.search)}
+document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b)showTab(b.dataset.t)});
+showTab(location.hash==="#pallets"?"pallets":"prices");
 })();
 </script>
 
