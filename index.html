@@ -96,6 +96,15 @@ dt{color:var(--muted)}dd{margin:0}
 .tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 16px;font-size:15px;font-weight:600}
 .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .ptab{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.scards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:12px}
+.scard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.scard h3{margin:0 0 10px;font-size:17px}
+.scard dl{margin:0;display:grid;grid-template-columns:110px 1fr;gap:7px 10px;font-size:14px}
+.scard dt{color:var(--muted)}
+.scard dd{margin:0}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 9px;margin:0 4px 4px 0;font-size:13px}
+.chip.ok{border-color:var(--accent);color:var(--accent)}
+@media (max-width:420px){.scard dl{grid-template-columns:1fr}.scard dt{margin-top:4px}}
 .ptab th,.ptab td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 .ptab th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
 .ptab td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -118,6 +127,7 @@ dt{color:var(--muted)}dd{margin:0}
   <div class="tabs" role="tablist">
     <button type="button" class="tab" role="tab" id="tb-prices" aria-selected="true" data-t="prices">Цены</button>
     <button type="button" class="tab" role="tab" id="tb-pallets" aria-selected="false" data-t="pallets">Паллеты</button>
+    <button type="button" class="tab" role="tab" id="tb-sup" aria-selected="false" data-t="suppliers">Поставщики</button>
   </div>
   <section id="tabPrices">
   <div class="controls">
@@ -138,6 +148,11 @@ dt{color:var(--muted)}dd{margin:0}
     <div class="segs cats" id="psup"></div>
     <div id="pout"><div class="empty">Загружаю справочник…</div></div>
     <p class="note">Справочник: вес сырья в коробке или мешке, формат паллеты, вес сырья на паллете и её размеры. Американка — 1200×1000, европаллета — 1200×800. Прочерк — данных пока нет.</p>
+  </section>
+  <section id="tabSuppliers" hidden>
+    <div class="controls"><input id="sq" class="search" type="search" placeholder="Поиск: поставщик, город, условие" aria-label="Поиск по поставщикам"></div>
+    <div id="sout"><div class="empty">Загружаю правила…</div></div>
+    <p class="note">Правила работы с поставщиками: когда подавать заявку, условия оплаты, адрес склада и часы работы. Перед отгрузкой уточняйте детали у менеджера поставщика.</p>
   </section>
 </main>
 <div id="drawerRoot"></div>
@@ -250,9 +265,16 @@ function renderPal(){if(!PAL)return;const q=P.q.toLowerCase();const rows=PAL.fil
  document.getElementById("pout").innerHTML=h+'</tbody></table>'}
 function loadPal(){if(PAL)return;fetch("data/pallets.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(j=>{PAL=j.rows||[];const sups=[...new Set(PAL.map(r=>r.s))];const box=document.getElementById("psup");box.innerHTML=[["","Все поставщики"],...sups.map(x=>[x,x])].map(([k,n])=>`<button type="button" class="seg" data-s="${esc(k)}" aria-pressed="${k===""}">${esc(n)}</button>`).join("");box.addEventListener("click",e=>{const b=e.target.closest(".seg");if(!b)return;P.s=b.dataset.s;box.querySelectorAll(".seg").forEach(x=>x.setAttribute("aria-pressed",x===b));renderPal()});renderPal()}).catch(()=>{document.getElementById("pout").innerHTML='<div class="empty">Не удалось загрузить справочник</div>'})}
 document.getElementById("pq").addEventListener("input",e=>{P.q=e.target.value.trim();renderPal()});
-function showTab(t){const pal=t==="pallets";document.getElementById("tabPrices").hidden=pal;document.getElementById("tabPallets").hidden=!pal;document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t));if(pal)loadPal();if(location.hash!==(pal?"#pallets":"")&&!(location.hash===""&&!pal))history.replaceState(null,"",pal?"#pallets":location.pathname+location.search)}
+/* ---- Поставщики ---- */
+let SUP=null,SQ="";
+function renderSup(){if(!SUP)return;const q=SQ.toLowerCase();const rows=SUP.filter(r=>!q||[r.s,r.addr,r.hours,...r.ship,...r.pay].join(" ").toLowerCase().includes(q));
+ document.getElementById("sout").innerHTML=rows.length?'<div class="scards">'+rows.map(r=>`<div class="scard"><h3>${esc(r.s)}</h3><dl><dt>Отгрузка</dt><dd>${r.ship.map(x=>`<div>${esc(x)}</div>`).join("")}</dd><dt>Оплата</dt><dd>${r.pay.map((x,i)=>`<span class="chip${i?" ok":""}">${esc(x)}</span>`).join("")}</dd><dt>Склад</dt><dd>${esc(r.addr)}</dd><dt>Часы</dt><dd>${esc(r.hours)}</dd></dl></div>`).join("")+'</div>':'<div class="empty">Ничего не найдено</div>'}
+function loadSup(){if(SUP)return;fetch("data/suppliers.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(j=>{SUP=j.rows||[];renderSup()}).catch(()=>{document.getElementById("sout").innerHTML='<div class="empty">Не удалось загрузить правила</div>'})}
+document.getElementById("sq").addEventListener("input",e=>{SQ=e.target.value.trim();renderSup()});
+const TABS={prices:"tabPrices",pallets:"tabPallets",suppliers:"tabSuppliers"};
+function showTab(t){if(!TABS[t])t="prices";for(const k in TABS)document.getElementById(TABS[k]).hidden=k!==t;document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t));if(t==="pallets")loadPal();if(t==="suppliers")loadSup();const h=t==="prices"?"":"#"+t;if(location.hash!==h)history.replaceState(null,"",h||location.pathname+location.search)}
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b)showTab(b.dataset.t)});
-showTab(location.hash==="#pallets"?"pallets":"prices");
+showTab(location.hash.slice(1)||"prices");
 })();
 </script>
 
