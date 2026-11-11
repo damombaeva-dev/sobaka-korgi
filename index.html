@@ -202,11 +202,11 @@ function render(){
     const [t,w]=dayTitle(d);const a=byDay[d]||[];
     const ev={};a.forEach(r=>{const k=(r.time||"—")+"|"+r.supplier;(ev[k]=ev[k]||[]).push(r)});
     h+=`<section class="day"><h2 class="dayh">${esc(t)} <small>${w} · ${a.length} поз.</small></h2><div class="tl">`;
-    const pd=pend.filter(p=>p.date===d);
-    if(pd.length)h+=`<div class="ev w"><div class="tm">ждём</div><div class="bx"><h3>Ждём ответа</h3><ul>${pd.map(p=>`<li class="pd"><span><b>${esc(p.s)}</b><small>${esc(p.what)}. ${esc(p.note)}</small></span><span class="st st-${esc(p.st)}">${({wait:"ждём",file:"файл",none:"нет ответа"})[p.st]||""}</span></li>`).join("")}</ul></div></div>`;
     for(const k of Object.keys(ev).sort((x,y)=>{const nx=x.startsWith("—"),ny=y.startsWith("—");return nx!==ny?(nx?1:-1):y.localeCompare(x)})){const [tm,s]=k.split("|"),it=ev[k];
       h+=`<div class="ev"><div class="tm">${tm==="—"?"":esc(tm)}</div><div class="bx"><h3>${esc(s)}</h3><div class="ds">${it.length} поз.${it[0].terms?" · "+esc(it[0].terms):""}</div>`+
       it.map(r=>`<button type="button" class="ln" data-id="${esc(r._id)}"><span class="n"><b>${esc(r.product)}</b><small>${esc(sub(r))}</small>${r.note?`<span class="nt">${esc(r.note)}</span>`:""}</span><span class="p"><b>${fmt(r.price,r.cur)}</b>${delta(r)}</span></button>`).join("")+`</div></div>`}
+    const pd=pend.filter(p=>p.date===d);
+    if(pd.length)h+=`<div class="ev w"><div class="tm">позже</div><div class="bx"><h3>Ждём ответа</h3><ul>${pd.map(p=>`<li class="pd"><span><b>${esc(p.s)}</b><small>${esc(p.what)}. ${esc(p.note)}</small></span><span class="st st-${esc(p.st)}">${({wait:"ждём",file:"файл",none:"нет ответа"})[p.st]||""}</span></li>`).join("")}</ul></div></div>`;
     h+=`</div></section>`;
   }
   out.innerHTML=h;
