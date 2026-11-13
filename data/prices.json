@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-13T13:05:00+03:00",
+ "updated": "2026-11-13T16:05:00+03:00",
  "prices": [
   {
    "_id": "2026-11-13_kontur-pko",
@@ -2875,6 +2875,44 @@
    "delivery": "",
    "terms": "с НДС",
    "note": ""
+  },
+  {
+   "_id": "2026-11-13_op-goldchoc555_1421",
+   "date": "2026-11-13",
+   "time": "14:21",
+   "key": "op-goldchoc555",
+   "cat": "fat",
+   "group": "ЛЗМК",
+   "product": "ЛЗМК Goldchoc 555",
+   "supplier": "Оил Партнерс",
+   "price": 3.565,
+   "cur": "USD",
+   "spec": "",
+   "origin": "",
+   "pack": "коробка 20 кг",
+   "qty": "",
+   "delivery": "отгрузка из Азии в феврале, приход СПб июнь 2027",
+   "terms": "без НДС, СПб",
+   "note": "Юлия Д. из MAX"
+  },
+  {
+   "_id": "2026-11-13_op-coco-musim-may_1421",
+   "date": "2026-11-13",
+   "time": "14:21",
+   "key": "op-coco-musim-may",
+   "cat": "coconut",
+   "group": "Кокосовое масло",
+   "product": "Кокосовое масло RBD CNO Musim Mas",
+   "supplier": "Оил Партнерс",
+   "price": 2.76,
+   "cur": "USD",
+   "spec": "глицидолы до 1",
+   "origin": "",
+   "pack": "",
+   "qty": "",
+   "delivery": "май 2027",
+   "terms": "без НДС, СПб",
+   "note": "Юлия Д. из MAX"
   }
  ],
  "pending": [
