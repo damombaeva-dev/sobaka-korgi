@@ -69,6 +69,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .ev.w .bx{background:transparent;border-style:dashed}
 .ev.w .tm{color:var(--muted)}
 .ev.n .bx{border-color:var(--accent);border-width:2px}
+.seg[data-c="!imp"]{font-weight:700}
 .ev.n p{margin:6px 0 0;font-size:15px}
 .pd{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line2);list-style:none}
 .pd:first-child{border-top:0}
@@ -196,6 +197,11 @@ function render(){
   const rows=PRICES.filter(r=>inPeriod(r)&&match(r));
   const byDay={};rows.forEach(r=>(byDay[r.date]=byDay[r.date]||[]).push(r));
   const days=Object.keys(byDay).sort().reverse();
+  if(S.cat==="!imp"){
+    const all=NOTES.slice().sort((a,b)=>(b.date+(b.time||"")).localeCompare(a.date+(a.time||"")));
+    if(!all.length){out.innerHTML='<div class="empty">Важных новостей пока нет.</div>';return}
+    let hi="";for(const d of [...new Set(all.map(p=>p.date))]){const [t,w]=dayTitle(d);hi+=`<section class="day"><h2 class="dayh">${esc(t)} <small>${w}</small></h2><div class="tl">`+all.filter(p=>p.date===d).map(p=>`<div class="ev n"><div class="tm">${esc(p.time||"")}</div><div class="bx"><h3>Важно</h3><p>${esc(p.text)}</p></div></div>`).join("")+`</div></section>`}
+    out.innerHTML=hi;return}
   const pend=PENDING.filter(p=>S.per==="day"?p.date===S.day:inPeriod({date:p.date}));
   const nts=NOTES.filter(p=>S.per==="day"?p.date===S.day:inPeriod({date:p.date}));
   if(!days.length&&!pend.length&&!nts.length){out.innerHTML=`<div class="empty">За ${S.per==="day"?esc(dayTitle(S.day)[0].toLowerCase()):"этот период"} цен не найдено.</div>`;return}
@@ -249,7 +255,7 @@ document.getElementById("q").addEventListener("input",e=>{S.q=e.target.value;ren
 document.getElementById("per").addEventListener("click",e=>{const b=e.target.closest(".seg");if(!b)return;S.per=b.dataset.p;document.querySelectorAll("#per .seg").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
 document.getElementById("date").addEventListener("change",e=>{if(!e.target.value)return;S.day=e.target.value;if(S.per==="all"){S.per="day";document.querySelectorAll("#per .seg").forEach(x=>x.setAttribute("aria-pressed",x.dataset.p==="day"))}render()});
 const cats=document.getElementById("cats");
-cats.innerHTML=[["","Все товары"],...Object.entries(CATS)].map(([k,n])=>`<button type="button" class="seg" data-c="${k}" aria-pressed="${k===""}">${n}</button>`).join("");
+cats.innerHTML=[["","Все товары"],["!imp","Важно"],...Object.entries(CATS)].map(([k,n])=>`<button type="button" class="seg" data-c="${k}" aria-pressed="${k===""}">${n}</button>`).join("");
 cats.addEventListener("click",e=>{const b=e.target.closest(".seg");if(!b)return;S.cat=b.dataset.c;cats.querySelectorAll(".seg").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
 
 (async()=>{
