@@ -68,6 +68,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .ev.w::before{border-color:var(--muted)}
 .ev.w .bx{background:transparent;border-style:dashed}
 .ev.w .tm{color:var(--muted)}
+.ev.n .bx{border-color:var(--accent);border-width:2px}
+.ev.n p{margin:6px 0 0;font-size:15px}
 .pd{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line2);list-style:none}
 .pd:first-child{border-top:0}
 .pd small{display:block;color:var(--muted);font-size:13px}
@@ -168,7 +170,7 @@ document.getElementById("pals").addEventListener("click",e=>{const b=e.target.cl
 
 const CATS={cocoa:"Какао-продукты",palm:"Пальмовое масло",coconut:"Кокосовое масло",fat:"Спецжиры (ЛЗМК, ЭКМ, ЗМЖ)",other:"Прочее"};
 const S={q:"",cat:"",per:"day",day:null};
-let PRICES=[],PENDING=[];
+let PRICES=[],PENDING=[],NOTES=[];
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt=(v,c)=>c==="RUB"?Number(v).toLocaleString("ru-RU")+" ₽":(c==="EUR"?"€":"$")+Number(v).toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:3});
 const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
@@ -195,13 +197,15 @@ function render(){
   const byDay={};rows.forEach(r=>(byDay[r.date]=byDay[r.date]||[]).push(r));
   const days=Object.keys(byDay).sort().reverse();
   const pend=PENDING.filter(p=>S.per==="day"?p.date===S.day:inPeriod({date:p.date}));
-  if(!days.length&&!pend.length){out.innerHTML=`<div class="empty">За ${S.per==="day"?esc(dayTitle(S.day)[0].toLowerCase()):"этот период"} цен не найдено.</div>`;return}
+  const nts=NOTES.filter(p=>S.per==="day"?p.date===S.day:inPeriod({date:p.date}));
+  if(!days.length&&!pend.length&&!nts.length){out.innerHTML=`<div class="empty">За ${S.per==="day"?esc(dayTitle(S.day)[0].toLowerCase()):"этот период"} цен не найдено.</div>`;return}
   let h="";
-  const showDays=[...new Set([...days,...pend.map(p=>p.date)])].sort().reverse();
+  const showDays=[...new Set([...days,...pend.map(p=>p.date),...nts.map(p=>p.date)])].sort().reverse();
   for(const d of showDays){
     const [t,w]=dayTitle(d);const a=byDay[d]||[];
     const ev={};a.forEach(r=>{const k=(r.time||"—")+"|"+r.supplier;(ev[k]=ev[k]||[]).push(r)});
     h+=`<section class="day"><h2 class="dayh">${esc(t)} <small>${w} · ${a.length} поз.</small></h2><div class="tl">`;
+    h+=nts.filter(p=>p.date===d).map(p=>`<div class="ev n"><div class="tm">${esc(p.time||"")}</div><div class="bx"><h3>Важно</h3><p>${esc(p.text)}</p></div></div>`).join("");
     for(const k of Object.keys(ev).sort((x,y)=>{const nx=x.startsWith("—"),ny=y.startsWith("—");return nx!==ny?(nx?1:-1):y.localeCompare(x)})){const [tm,s]=k.split("|"),it=ev[k];
       h+=`<div class="ev"><div class="tm">${tm==="—"?"":esc(tm)}</div><div class="bx"><h3>${esc(s)}</h3><div class="ds">${it.length} поз.${it[0].terms?" · "+esc(it[0].terms):""}</div>`+
       it.map(r=>`<button type="button" class="ln" data-id="${esc(r._id)}"><span class="n"><b>${esc(r.product)}</b><small>${esc(sub(r))}</small>${r.note?`<span class="nt">${esc(r.note)}</span>`:""}</span><span class="p"><b>${fmt(r.price,r.cur)}</b>${delta(r)}</span></button>`).join("")+`</div></div>`}
@@ -250,7 +254,7 @@ cats.addEventListener("click",e=>{const b=e.target.closest(".seg");if(!b)return;
 
 (async()=>{
   const out=document.getElementById("out");
-  try{const r=await fetch("data/prices.json?t="+Date.now(),{cache:"no-store"});const j=await r.json();PRICES=j.prices||[];PENDING=j.pending||[];
+  try{const r=await fetch("data/prices.json?t="+Date.now(),{cache:"no-store"});const j=await r.json();PRICES=j.prices||[];PENDING=j.pending||[];NOTES=j.notes||[];
     if(j.updated){const u=new Date(j.updated);document.querySelector(".brand span").textContent="обновлено "+u.toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"});}
     render();}catch(e){out.innerHTML='<div class="empty">Не удалось загрузить цены. Обновите страницу.</div>'}
 })();
