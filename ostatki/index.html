@@ -59,16 +59,48 @@ a{color:var(--accent)}
 .chk input{accent-color:var(--accent);width:16px;height:16px}
 .sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted);padding-block:2px 6px}
 .sum b{color:var(--text)}
-.sup{margin-top:22px}
-.suph{display:flex;align-items:baseline;gap:10px;width:100%;text-align:left;border:0;background:none;padding:6px 0 8px;border-bottom:2px solid var(--line)}
-.suph h2{margin:0;font-size:16.5px;letter-spacing:-.01em;flex:1;min-width:0}
+.sup{--c:#6b7a71;--ct:color-mix(in srgb,var(--c) 9%,var(--bg));--cn:var(--c);margin-top:20px;background:var(--ct);border:1px solid color-mix(in srgb,var(--c) 30%,var(--line));border-left:6px solid var(--c);border-radius:14px;padding:0 12px 12px}
+:root[data-pal="dark"] .sup{--ct:color-mix(in srgb,var(--c) 14%,var(--bg));--cn:color-mix(in srgb,var(--c) 55%,#fff)}
+.suph{position:sticky;top:var(--toph,110px);z-index:5;display:flex;align-items:center;gap:10px;width:calc(100% + 24px);margin:0 -12px;text-align:left;border:0;background:var(--ct);padding:10px 12px;border-radius:0 12px 0 0;border-bottom:1px solid color-mix(in srgb,var(--c) 30%,var(--line))}
+.suph::before{content:"";flex:0 0 auto;width:12px;height:12px;border-radius:50%;background:var(--c)}
+.suph h2{margin:0;font-size:16px;letter-spacing:-.01em;flex:1;min-width:0;color:var(--cn)}
 .suph small{color:var(--muted);font-size:12.5px;white-space:nowrap}
-.suph .car{color:var(--muted);transition:transform .15s;display:inline-block}
+.suph .car{color:var(--muted);transition:transform .15s;display:inline-block;order:3}
+.sup.col{padding-bottom:0}
+.sup.col .suph{border-bottom:0;border-radius:0 12px 12px 0}
 .sup.col .car{transform:rotate(-90deg)}
 .sup.col .cards{display:none}
-.supn{color:var(--muted);font-size:12.5px;margin:6px 0 0}
-.cards{display:grid;gap:12px;margin-top:12px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;transition:background .6s}
+.cards{display:grid;gap:10px;margin-top:12px}
+.xlw{overflow-x:auto;border:1px solid color-mix(in srgb,var(--c) 35%,var(--line));border-radius:10px;background:var(--surface)}
+.xl{width:100%;min-width:860px;table-layout:fixed;border-collapse:collapse;font-size:13.5px}
+.xl th{position:sticky;top:0;background:var(--surface);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.xl td{padding:5px 8px;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2);vertical-align:top}
+.xl td:last-child{border-right:0}
+.xl .n{text-align:right;white-space:nowrap}
+.xl td.bal{color:var(--muted);width:90px}
+.xl td.c{font-weight:600;overflow-wrap:anywhere}
+.xl td:nth-child(4){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xl tr.ph td{background:color-mix(in srgb,var(--c) 26%,var(--surface));border-top:2px solid var(--c);border-right:0;padding:7px 8px}
+:root[data-pal="dark"] .xl tr.ph td{background:color-mix(in srgb,var(--c) 32%,var(--surface))}
+.phi{display:flex;justify-content:space-between;gap:16px;align-items:baseline}
+.phi b{font-weight:700}
+.pm{font-size:12.5px;opacity:.85}
+.pf{white-space:nowrap;font-size:13px}
+.pf b{font-size:15px;color:var(--ok)}
+.pf.zero b{color:var(--muted)}.pf.neg b{color:var(--bad)}
+.xl tr.pt td{border-bottom:0;padding-bottom:9px}
+.xl tr.pt td.n b{color:var(--ok)}
+.xl tr.pt td.zero b{color:var(--muted)}.xl tr.pt td.neg b{color:var(--bad)}
+.xl tr.cx td{color:var(--muted);text-decoration:line-through}
+.xl tr.hit td{background:var(--warn-bg)}
+.xl .dt{color:var(--ok);font-weight:600}
+.xl tbody.flash td{background:var(--flash)}
+.xl .nt{margin:0 6px 0 0}
+#views{margin-right:6px}
+.suph .sd{font-weight:500;font-size:13px;color:var(--muted)}
+@media(max-width:760px){.sup{padding:0 6px 6px;border-left-width:5px}.suph{width:calc(100% + 12px);margin:0 -6px}.suph .sd{display:none}.brand b{font-size:15px}}
+.sl{font-size:11.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--cn);margin-bottom:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:14px;padding:14px 16px;transition:background .6s}
 .card.flash{background:var(--flash)}
 .ch{display:flex;gap:14px;align-items:flex-start;justify-content:space-between}
 .ch h3{margin:0;font-size:15.5px;line-height:1.3}
@@ -131,7 +163,7 @@ a{color:var(--accent)}
 
 <div class="top"><div class="wrap">
   <div class="topin">
-    <div class="brand"><b>Остатки по товарам</b><span id="status" class="load"><i></i>Загрузка…</span></div>
+    <div class="brand"><b>Остатки<span class="hide-m"> по товарам</span></b><span id="status" class="load"><i></i>Загрузка…</span></div>
     <button type="button" class="btn" id="reload" title="Загрузить свежие данные сейчас">↻ <span class="hide-m">Обновить</span></button>
     <a class="btn pri" id="edit" href="#" target="_blank" rel="noopener" hidden>✎ <span class="hide-m">Править таблицу</span><span class="show-m">Править</span></a>
     <div class="pals" id="theme" role="group" aria-label="Оформление"><button type="button" class="pal" data-k="light" aria-pressed="true" title="Светлая тема"><span class="sw" style="background:#4f7a63;box-shadow:inset 0 0 0 5px #f1f4f0"></span><span class="lbl">Светлая</span></button><button type="button" class="pal" data-k="dark" aria-pressed="false" title="Тёмная тема"><span class="sw" style="background:#d9a46c;box-shadow:inset 0 0 0 5px #1f2228"></span><span class="lbl">Тёмная</span></button></div>
@@ -143,6 +175,7 @@ a{color:var(--accent)}
   <div id="view" hidden>
     <div class="controls">
       <input id="q" class="search" type="search" placeholder="Поиск: товар, клиент, поставщик" aria-label="Поиск">
+      <div class="segs" id="views"><button type="button" class="seg" data-v="xl">Как в Excel</button><button type="button" class="seg" data-v="cards">Карточки</button></div>
       <div class="segs" id="mgrs"></div>
       <label class="chk"><input type="checkbox" id="free">Только со свободным объёмом</label>
       <label class="chk"><input type="checkbox" id="all">Искать во всех месяцах</label>
@@ -179,7 +212,7 @@ let SHEET=null;
 
 /* состояние */
 let DATA=null,cur=null,mgr="",timer=null,prevSig={},localFile=false,loading=false,lastOk=null;
-const st={q:"",free:false,all:false};
+const st={q:"",free:false,all:false,view:ls.get("ost-view")==="cards"?"cards":"xl"};
 
 function monthOf(name){const m=String(name).trim().toLowerCase().match(/^([а-яё]+)\s+(\d{4})$/);if(!m)return null;const i=MONTHS.indexOf(m[1]);if(i<0)return null;return {y:+m[2],m:i+1}}
 function num(v){if(typeof v==="number")return v;if(v==null)return null;const s=String(v).replace(/\s/g,"").replace(",",".");return /^-?\d+(\.\d+)?$/.test(s)?parseFloat(s):null}
@@ -206,7 +239,7 @@ function parseSheet(ws){
     if(a!=null)prod.avail.push(a);
     if(client||q!=null){
       if(!client&&q==null)return;
-      prod.rows.push({client,q,res:txt(r[3]),ship:r[4],shipT:txt(r[4]),terms:[txt(r[5]),txt(r[6])].filter(Boolean).join(" · "),mgr:txt(r[7])});
+      prod.rows.push({bal:a,client,q,res:txt(r[3]),ship:r[4],shipT:txt(r[4]),terms:[txt(r[5]),txt(r[6])].filter(Boolean).join(" · "),mgr:txt(r[7])});
     }else{
       const n=[r[1],r[3],r[4],r[5],r[6],r[7]].map(txt).filter(Boolean).join(" ");
       if(n)prod.notes.push(n);
@@ -291,11 +324,25 @@ function renderMgrs(){
 }
 $("mgrs").addEventListener("click",e=>{const b=e.target.closest(".seg");if(!b)return;mgr=b.dataset.m;renderMgrs();render()});
 let qt;$("q").addEventListener("input",()=>{clearTimeout(qt);qt=setTimeout(()=>{st.q=$("q").value.trim().toLowerCase();render()},120)});
+function renderViews(){document.querySelectorAll("#views .seg").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===st.view))}
+renderViews();
+$("views").addEventListener("click",e=>{const b=e.target.closest(".seg");if(!b)return;st.view=b.dataset.v;ls.set("ost-view",st.view);renderViews();render()});
 $("free").onchange=()=>{st.free=$("free").checked;render()};
 $("all").onchange=()=>{st.all=$("all").checked;render()};
 
 const collapsed=new Set(JSON.parse(ls.get("ost-col")||"[]"));
 document.addEventListener("click",e=>{const h=e.target.closest(".suph");if(!h)return;const k=h.dataset.k;const s=h.parentElement;s.classList.toggle("col");if(s.classList.contains("col"))collapsed.add(k);else collapsed.delete(k);h.setAttribute("aria-expanded",!s.classList.contains("col"));ls.set("ost-col",JSON.stringify([...collapsed]))});
+
+
+/* цвета поставщиков: как привыкли в Excel */
+const SUP_FIXED=[[/^\s*дв\b|дв\s*трейд/i,"#2f6fd0"],[/о[иі]л\s*партн|oil\s*partn/i,"#8b5a2b"],[/контур/i,"#b0479b"],[/криспи/i,"#7c838c"],[/альтум/i,"#2f8f4e"]];
+const SUP_PAL=["#d07a1f","#1f8a8a","#5b5bd6","#c2413b","#7d8a22","#2390b8","#9b59b6","#b8860b","#d35d8a","#4a7c59","#e0663a","#3d6e9e"];
+const supCache={};
+function supColor(n){if(supCache[n])return supCache[n];for(const [re,c] of SUP_FIXED)if(re.test(n))return supCache[n]=c;let h=0;for(const ch of n.toLowerCase().replace(/[^а-яёa-z0-9]/g,""))h=(h*31+ch.charCodeAt(0))>>>0;return supCache[n]=SUP_PAL[h%SUP_PAL.length]}
+function shortSup(n){return String(n).replace(/\s*\(.*$/,"").replace(/\s+(согласован|неоход|необход).*/i,"").trim()||n}
+/* липкий заголовок поставщика прямо под шапкой */
+function setTopH(){document.documentElement.style.setProperty("--toph",document.querySelector(".top").offsetHeight+"px")}
+window.addEventListener("resize",setTopH);if(window.ResizeObserver)new ResizeObserver(setTopH).observe(document.querySelector(".top"));
 
 function shipCell(b){
   const t=b.shipT;if(!t)return"";
@@ -329,7 +376,7 @@ function card(f,flash){
     f.rows.map(b=>`<tr class="${/отмен/i.test(b.shipT)?"cx":""}${f.hits.has(b)?" hit":""}"><td class="c"><span>${esc(b.client||"—")}</span><span class="qm">${fmt(b.q)} кг</span></td><td class="n q">${fmt(b.q)}</td><td data-l="Бронь">${esc(b.res.replace(/^бронь\s*/i,""))}</td><td class="st">${shipCell(b)}</td><td data-l="Условия">${esc(b.terms)}</td><td class="mgr" data-l="Менеджер">${esc(b.mgr)}</td></tr>`).join("")
   }</tbody></table>`:`<div class="nobk">Броней нет</div>`;
   return `<article class="card${flash?" flash":""}">
-    <div class="ch"><div><h3>${esc(p.name)}</h3>${rest?`<div class="meta">${rest}</div>`:""}</div>
+    <div class="ch"><div><div class="sl">${esc(shortSup(p.sup))}</div><h3>${esc(p.name)}</h3>${rest?`<div class="meta">${rest}</div>`:""}</div>
       <div class="nums"><div><small>Объём</small><span>${fmt(p.total)}</span></div><div><small>В брони</small><span>${fmt(p.booked)}</span></div><div class="free${fc}"><small>Свободно</small><span>${fmt(freeV)}</span></div></div></div>
     ${tot>0?`<div class="bar" title="Забронировано ${Math.round(pctB)}%"><i style="width:${pctB}%"></i></div>`:""}
     ${body}
@@ -337,6 +384,21 @@ function card(f,flash){
   </article>`;
 }
 
+
+function xlTable(items,t,s,changed){
+  let h=`<div class="xlw"><table class="xl"><colgroup><col style="width:92px"><col style="width:21%"><col style="width:100px"><col style="width:150px"><col style="width:120px"><col><col style="width:100px"></colgroup><thead><tr><th class="n">Остаток</th><th>Клиент</th><th class="n">Кол-во, кг</th><th>Бронь</th><th>Отгрузка</th><th>Условия</th><th>Менеджер</th></tr></thead>`;
+  items.forEach(f=>{
+    const p=f.p,fl=changed&&changed.has(t.name+"|"+s.name+"|"+p.head);
+    const fc=p.free==null?"":p.free<0?" neg":p.free===0?" zero":"";
+    h+=`<tbody class="${fl?"flash":""}"><tr class="ph"><td colspan="7"><div class="phi"><span><b>${esc(p.name)}</b>${p.rest?` <span class="pm">${esc(p.rest)}</span>`:""}</span><span class="pf${fc}">Свободно: <b>${fmt(p.free)}</b></span></div></td></tr>`;
+    f.rows.forEach(b=>{
+      const cx=/отмен/i.test(b.shipT);
+      h+=`<tr class="${cx?"cx":""}${f.hits.has(b)?" hit":""}"><td class="n bal">${fmt(b.bal)}</td><td class="c">${esc(b.client)}</td><td class="n">${fmt(b.q)}</td><td>${esc(b.res)}</td><td class="st">${b.ship instanceof Date?`<span class="dt">${esc(ddmm(b.ship))}</span>`:esc(b.shipT)}</td><td>${esc(b.terms)}</td><td class="mgr">${esc(b.mgr)}</td></tr>`;
+    });
+    h+=`<tr class="pt"><td class="n${fc}"><b>${fmt(p.free)}</b></td><td colspan="6">${p.notes.map(n=>`<span class="nt">${esc(n)}</span>`).join("")}</td></tr></tbody>`;
+  });
+  return h+`</table></div>`;
+}
 function renderMonth(t,changed,showTitle){
   let html="",cnt=0,free=0,bk=0;
   t.sups.forEach(s=>{
@@ -345,7 +407,7 @@ function renderMonth(t,changed,showTitle){
     cnt+=items.length;items.forEach(f=>{if(f.p.free>0)free++;bk+=f.rows.length});
     const k=t.name+"|"+s.name;
     const col=collapsed.has(s.name)&&!st.q;
-    html+=`<section class="sup${col?" col":""}"><button type="button" class="suph" data-k="${esc(s.name)}" aria-expanded="${!col}"><span class="car">▾</span><h2>${esc(s.name)}</h2><small>${items.length} поз.</small></button><div class="cards">${items.map(f=>card(f,changed&&changed.has(t.name+"|"+s.name+"|"+f.p.head))).join("")}</div></section>`;
+    html+=`<section class="sup${col?" col":""}" style="--c:${supColor(s.name)}"><button type="button" class="suph" data-k="${esc(s.name)}" aria-expanded="${!col}"><span class="car">▾</span><h2>${esc(shortSup(s.name))}${shortSup(s.name)!==s.name?` <span class="sd">${esc(s.name.slice(shortSup(s.name).length).trim())}</span>`:""}</h2><small>${items.length} поз.</small></button><div class="cards">${st.view==="xl"?xlTable(items,t,s,changed):items.map(f=>card(f,changed&&changed.has(t.name+"|"+s.name+"|"+f.p.head))).join("")}</div></section>`;
   });
   if(showTitle&&html)html=`<div class="mon"><h2>${esc(t.name)}</h2>${html}</div>`;
   return {html,cnt,free,bk};
@@ -358,7 +420,7 @@ function render(changed){
   months.forEach(t=>{const r=renderMonth(t,changed,months.length>1);html+=r.html;cnt+=r.cnt;free+=r.free;bk+=r.bk});
   $("list").innerHTML=html||`<div class="empty">Ничего не найдено${st.q&&!st.all?". Попробуйте включить «Искать во всех месяцах».":""}</div>`;
   $("sum").innerHTML=`<span>Позиций: <b>${cnt}</b></span><span>Со свободным объёмом: <b>${free}</b></span><span>Броней: <b>${bk}</b></span>`;
-  if(changed&&changed.size)setTimeout(()=>document.querySelectorAll(".card.flash").forEach(c=>c.classList.remove("flash")),2500);
+  if(changed&&changed.size)setTimeout(()=>document.querySelectorAll(".flash").forEach(c=>c.classList.remove("flash")),2500);
 }
 
 /* экран настройки */
