@@ -91,6 +91,12 @@ a{color:var(--accent)}
 .xl tr.pt td{border-bottom:0;padding-bottom:9px}
 .xl tr.pt td.n b{color:var(--ok)}
 .xl tr.pt td.zero b{color:var(--muted)}.xl tr.pt td.neg b{color:var(--bad)}
+.xl tr.done td,.bk tr.done td{color:var(--muted);background:color-mix(in srgb,var(--line2) 55%,transparent)}
+.xl tr.done td.c,.bk tr.done td.c{font-weight:500}
+.xl tr.done .dt{color:var(--muted);font-weight:500}
+.bk tr.done .tag{background:transparent;color:var(--muted);padding:0}
+.xl tr.done:hover td,.bk tr.done:hover td{color:var(--text)}
+.xl tr.dl td{border-bottom:2px solid var(--line)}
 .xl tr.cx td{color:var(--muted);text-decoration:line-through}
 .xl tr.hit td{background:var(--warn-bg)}
 .xl .dt{color:var(--ok);font-weight:600}
@@ -163,7 +169,7 @@ a{color:var(--accent)}
 
 <div class="top"><div class="wrap">
   <div class="topin">
-    <div class="brand"><b>Остатки<span class="hide-m"> по товарам</span></b><span id="status" class="load"><i></i>Загрузка…</span></div>
+    <div class="brand"><b>Остатки<em class="hide-m" style="font-style:normal"> по товарам</em></b><span id="status" class="load"><i></i>Загрузка…</span></div>
     <button type="button" class="btn" id="reload" title="Загрузить свежие данные сейчас">↻ <span class="hide-m">Обновить</span></button>
     <a class="btn pri" id="edit" href="#" target="_blank" rel="noopener" hidden>✎ <span class="hide-m">Править таблицу</span><span class="show-m">Править</span></a>
     <div class="pals" id="theme" role="group" aria-label="Оформление"><button type="button" class="pal" data-k="light" aria-pressed="true" title="Светлая тема"><span class="sw" style="background:#4f7a63;box-shadow:inset 0 0 0 5px #f1f4f0"></span><span class="lbl">Светлая</span></button><button type="button" class="pal" data-k="dark" aria-pressed="false" title="Тёмная тема"><span class="sw" style="background:#d9a46c;box-shadow:inset 0 0 0 5px #1f2228"></span><span class="lbl">Тёмная</span></button></div>
@@ -178,6 +184,7 @@ a{color:var(--accent)}
       <div class="segs" id="views"><button type="button" class="seg" data-v="xl">Как в Excel</button><button type="button" class="seg" data-v="cards">Карточки</button></div>
       <div class="segs" id="mgrs"></div>
       <label class="chk"><input type="checkbox" id="free">Только со свободным объёмом</label>
+      <label class="chk"><input type="checkbox" id="hide">Скрыть отгруженные</label>
       <label class="chk"><input type="checkbox" id="all">Искать во всех месяцах</label>
     </div>
     <div class="sum" id="sum"></div>
@@ -212,7 +219,7 @@ let SHEET=null;
 
 /* состояние */
 let DATA=null,cur=null,mgr="",timer=null,prevSig={},localFile=false,loading=false,lastOk=null;
-const st={q:"",free:false,all:false,view:ls.get("ost-view")==="cards"?"cards":"xl"};
+const st={q:"",free:false,all:false,hide:ls.get("ost-hide")==="1",view:ls.get("ost-view")==="cards"?"cards":"xl"};
 
 function monthOf(name){const m=String(name).trim().toLowerCase().match(/^([а-яё]+)\s+(\d{4})$/);if(!m)return null;const i=MONTHS.indexOf(m[1]);if(i<0)return null;return {y:+m[2],m:i+1}}
 function num(v){if(typeof v==="number")return v;if(v==null)return null;const s=String(v).replace(/\s/g,"").replace(",",".");return /^-?\d+(\.\d+)?$/.test(s)?parseFloat(s):null}
@@ -247,6 +254,11 @@ function parseSheet(ws){
   });
   sups.forEach(s=>s.items.forEach(p=>{
     p.total=p.avail.length?p.avail[0]:null;
+    // отгруженные (в «Отгрузке» стоит дата) — наверх, остаток по строкам пересчитываем в новом порядке
+    p.rows.forEach(b=>b.done=b.ship instanceof Date);
+    p.rows=[...p.rows.filter(b=>b.done),...p.rows.filter(b=>!b.done)];
+    if(p.total!=null){let run=p.total;p.rows.forEach(b=>{b.bal=run;run-=(b.q||0)})}
+    p.rows.forEach((b,i)=>b.lastDone=b.done&&!(p.rows[i+1]&&p.rows[i+1].done)&&i<p.rows.length-1);
     p.booked=p.rows.reduce((s,b)=>s+(b.q||0),0);
     p.free=p.avail.length>1?p.avail[p.avail.length-1]:(p.total!=null?p.total-p.booked:null);
     const m=p.head.match(/^(.*?)(?:\s*\(|\s+-{1,3}\s|\s+\/\/|$)/);p.name=(m&&m[1].trim())||p.head;
@@ -328,6 +340,7 @@ function renderViews(){document.querySelectorAll("#views .seg").forEach(b=>b.set
 renderViews();
 $("views").addEventListener("click",e=>{const b=e.target.closest(".seg");if(!b)return;st.view=b.dataset.v;ls.set("ost-view",st.view);renderViews();render()});
 $("free").onchange=()=>{st.free=$("free").checked;render()};
+$("hide").checked=st.hide;$("hide").onchange=()=>{st.hide=$("hide").checked;ls.set("ost-hide",st.hide?"1":"0");render()};
 $("all").onchange=()=>{st.all=$("all").checked;render()};
 
 const collapsed=new Set(JSON.parse(ls.get("ost-col")||"[]"));
@@ -356,7 +369,8 @@ function hl(s){return esc(s)}
 function filterProd(p){
   if(st.free&&!(p.free>0))return null;
   let rows=p.rows;
-  if(mgr){rows=rows.filter(r=>r.mgr===mgr);if(!rows.length)return null}
+  if(st.hide)rows=rows.filter(r=>!r.done);
+  if(mgr){rows=rows.filter(r=>r.mgr===mgr);if(!rows.length&&!p.rows.some(r=>r.mgr===mgr&&!(st.hide&&r.done)))return null}
   if(st.q){
     const inHead=(p.head+" "+p.sup).toLowerCase().includes(st.q)||p.notes.join(" ").toLowerCase().includes(st.q);
     const hits=rows.filter(r=>(r.client+" "+r.terms+" "+r.res+" "+r.mgr).toLowerCase().includes(st.q));
@@ -373,7 +387,7 @@ function card(f,flash){
   const fc=freeV==null?"":freeV<0?" neg":freeV===0?" zero":"";
   const rest=p.rest?esc(p.rest).replace(/(себестоимость[^·]*)/i,"<b>$1</b>"):"";
   const body=f.rows.length?`<table class="bk"><thead><tr><th>Клиент</th><th class="n">Кол-во, кг</th><th>Бронь</th><th>Отгрузка</th><th>Условия</th><th>Менеджер</th></tr></thead><tbody>${
-    f.rows.map(b=>`<tr class="${/отмен/i.test(b.shipT)?"cx":""}${f.hits.has(b)?" hit":""}"><td class="c"><span>${esc(b.client||"—")}</span><span class="qm">${fmt(b.q)} кг</span></td><td class="n q">${fmt(b.q)}</td><td data-l="Бронь">${esc(b.res.replace(/^бронь\s*/i,""))}</td><td class="st">${shipCell(b)}</td><td data-l="Условия">${esc(b.terms)}</td><td class="mgr" data-l="Менеджер">${esc(b.mgr)}</td></tr>`).join("")
+    f.rows.map(b=>`<tr class="${/отмен/i.test(b.shipT)?"cx":""}${b.done?" done":""}${f.hits.has(b)?" hit":""}"><td class="c"><span>${esc(b.client||"—")}</span><span class="qm">${fmt(b.q)} кг</span></td><td class="n q">${fmt(b.q)}</td><td data-l="Бронь">${esc(b.res.replace(/^бронь\s*/i,""))}</td><td class="st">${shipCell(b)}</td><td data-l="Условия">${esc(b.terms)}</td><td class="mgr" data-l="Менеджер">${esc(b.mgr)}</td></tr>`).join("")
   }</tbody></table>`:`<div class="nobk">Броней нет</div>`;
   return `<article class="card${flash?" flash":""}">
     <div class="ch"><div><div class="sl">${esc(shortSup(p.sup))}</div><h3>${esc(p.name)}</h3>${rest?`<div class="meta">${rest}</div>`:""}</div>
@@ -393,7 +407,7 @@ function xlTable(items,t,s,changed){
     h+=`<tbody class="${fl?"flash":""}"><tr class="ph"><td colspan="7"><div class="phi"><span><b>${esc(p.name)}</b>${p.rest?` <span class="pm">${esc(p.rest)}</span>`:""}</span><span class="pf${fc}">Свободно: <b>${fmt(p.free)}</b></span></div></td></tr>`;
     f.rows.forEach(b=>{
       const cx=/отмен/i.test(b.shipT);
-      h+=`<tr class="${cx?"cx":""}${f.hits.has(b)?" hit":""}"><td class="n bal">${fmt(b.bal)}</td><td class="c">${esc(b.client)}</td><td class="n">${fmt(b.q)}</td><td>${esc(b.res)}</td><td class="st">${b.ship instanceof Date?`<span class="dt">${esc(ddmm(b.ship))}</span>`:esc(b.shipT)}</td><td>${esc(b.terms)}</td><td class="mgr">${esc(b.mgr)}</td></tr>`;
+      h+=`<tr class="${cx?"cx":""}${b.done?" done":""}${b.lastDone&&!st.hide?" dl":""}${f.hits.has(b)?" hit":""}"><td class="n bal">${fmt(b.bal)}</td><td class="c">${esc(b.client)}</td><td class="n">${fmt(b.q)}</td><td>${esc(b.res)}</td><td class="st">${b.ship instanceof Date?`<span class="dt">✓ ${esc(ddmm(b.ship))}</span>`:esc(b.shipT)}</td><td>${esc(b.terms)}</td><td class="mgr">${esc(b.mgr)}</td></tr>`;
     });
     h+=`<tr class="pt"><td class="n${fc}"><b>${fmt(p.free)}</b></td><td colspan="6">${p.notes.map(n=>`<span class="nt">${esc(n)}</span>`).join("")}</td></tr></tbody>`;
   });
