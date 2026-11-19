@@ -39,6 +39,11 @@ a{color:var(--accent)}
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:7px 12px;font-size:14px;text-decoration:none;color:var(--text);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
 .btn[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--ring)}
+.pals{display:flex;gap:4px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px}
+.pal{display:flex;align-items:center;gap:7px;border:0;background:none;border-radius:999px;padding:4px 11px 4px 4px;font-size:13px;color:var(--muted)}
+.pal[aria-pressed="true"]{background:var(--chip);color:var(--text);font-weight:600}
+.sw{width:20px;height:20px;border-radius:50%;flex:0 0 auto}
+@media(max-width:760px){.pal .lbl{display:none}.pal{padding:4px}}
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-block:0 10px;scrollbar-width:thin}
 .tab{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 15px;font-size:14.5px;font-weight:600}
 .tab small{font-weight:500;color:var(--muted);margin-left:6px;font-size:12px}
@@ -129,7 +134,7 @@ a{color:var(--accent)}
     <div class="brand"><b>Остатки по товарам</b><span id="status" class="load"><i></i>Загрузка…</span></div>
     <button type="button" class="btn" id="reload" title="Загрузить свежие данные сейчас">↻ <span class="hide-m">Обновить</span></button>
     <a class="btn pri" id="edit" href="#" target="_blank" rel="noopener" hidden>✎ <span class="hide-m">Править таблицу</span><span class="show-m">Править</span></a>
-    <button type="button" class="btn" id="theme" aria-pressed="false" title="Тёмная тема" aria-label="Тёмная тема">☾</button>
+    <div class="pals" id="theme" role="group" aria-label="Оформление"><button type="button" class="pal" data-k="light" aria-pressed="true" title="Светлая тема"><span class="sw" style="background:#4f7a63;box-shadow:inset 0 0 0 5px #f1f4f0"></span><span class="lbl">Светлая</span></button><button type="button" class="pal" data-k="dark" aria-pressed="false" title="Тёмная тема"><span class="sw" style="background:#d9a46c;box-shadow:inset 0 0 0 5px #1f2228"></span><span class="lbl">Тёмная</span></button></div>
   </div>
   <div class="tabs" id="tabs" role="tablist"></div>
 </div></div>
@@ -163,9 +168,9 @@ const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k
 
 /* тема */
 const root=document.documentElement;
-function setTheme(d){if(d)root.dataset.pal="dark";else delete root.dataset.pal;$("theme").setAttribute("aria-pressed",!!d);}
-setTheme(ls.get("ost-theme")==="dark");
-$("theme").onclick=()=>{const d=root.dataset.pal!=="dark";setTheme(d);ls.set("ost-theme",d?"dark":"light")};
+function setTheme(d){if(d)root.dataset.pal="dark";else delete root.dataset.pal;document.querySelectorAll("#theme .pal").forEach(b=>b.setAttribute("aria-pressed",(b.dataset.k==="dark")===d));}
+(function(){const v=ls.get("ost-theme");setTheme(v?v==="dark":!!(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches))})();
+$("theme").addEventListener("click",e=>{const b=e.target.closest(".pal");if(!b)return;const d=b.dataset.k==="dark";setTheme(d);ls.set("ost-theme",d?"dark":"light")});
 
 /* id таблицы: из ссылки #id=… или из памяти браузера */
 function parseId(s){s=String(s||"").trim();const m=s.match(/\/d\/([a-zA-Z0-9_-]{20,})/);if(m)return m[1];if(/^[a-zA-Z0-9_-]{20,}$/.test(s))return s;return null}
@@ -246,7 +251,7 @@ async function load(manual){
     const wb=XLSX.read(buf,{type:"array",cellDates:true});
     apply(build(wb));
     lastOk=new Date();
-    setStatus("ok","Обновлено в "+lastOk.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"}));
+    setStatus("ok","Обновлено "+lastOk.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"}));
   }catch(e){
     console.warn(e);
     if(!DATA)showSetup("Не получилось открыть таблицу. Проверьте, что в Google Таблице включён доступ «Все, у кого есть ссылка — Читатель», и ссылка вставлена правильно.");
