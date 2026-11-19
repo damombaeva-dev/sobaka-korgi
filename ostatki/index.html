@@ -258,7 +258,9 @@ function parseSheet(ws){
     // отгруженные (в «Отгрузке» стоит дата) — наверх, остаток по строкам пересчитываем в новом порядке
     // порядок: отгруженные → отмены → активные брони
     p.rows.forEach(b=>{b.done=b.ship instanceof Date;b.cx=!b.done&&/отмен/i.test(b.shipT+" "+b.res);b.rank=b.done?0:b.cx?1:2});
-    p.rows=[0,1,2].flatMap(k=>p.rows.filter(b=>b.rank===k));
+    // внутри каждой группы: сначала брони Ольги, потом Анны, потом остальные (порядок из таблицы сохраняется)
+    const mo=m=>/^ольг/i.test(m)?0:/^ан(н|я)/i.test(m)?1:2;
+    p.rows=[0,1,2].flatMap(k=>p.rows.filter(b=>b.rank===k).map((b,i)=>[b,i]).sort((x,y)=>mo(x[0].mgr)-mo(y[0].mgr)||x[1]-y[1]).map(x=>x[0]));
     if(p.total!=null){let run=p.total;p.rows.forEach(b=>{b.bal=run;run-=(b.q||0)})}
     p.rows.forEach((b,i)=>b.lastDone=b.rank<2&&p.rows[i+1]&&p.rows[i+1].rank===2);
     p.booked=p.rows.reduce((s,b)=>s+(b.q||0),0);
