@@ -214,8 +214,9 @@ $("theme").addEventListener("click",e=>{const b=e.target.closest(".pal");if(!b)r
 
 /* id таблицы: из ссылки #id=… или из памяти браузера */
 function parseId(s){s=String(s||"").trim();const m=s.match(/\/d\/([a-zA-Z0-9_-]{20,})/);if(m)return m[1];if(/^[a-zA-Z0-9_-]{20,}$/.test(s))return s;return null}
-let SHEET=null;
-(function(){const h=new URLSearchParams(location.hash.slice(1));const id=parseId(h.get("id"));if(id){SHEET=id;ls.set("ost-sheet",id);history.replaceState(null,"",location.pathname+location.search)}else SHEET=ls.get("ost-sheet")})();
+const DEFAULT_SHEET="18f2ag6IcCpKuBrG67i9qDSIGqBbz7B8UwWpDvYFDvNg"; // постоянная таблица остатков
+let SHEET=DEFAULT_SHEET;
+(function(){const h=new URLSearchParams(location.hash.slice(1));const id=parseId(h.get("id"));if(id){SHEET=id;history.replaceState(null,"",location.pathname+location.search)}})();
 
 /* состояние */
 let DATA=null,cur=null,mgr="",timer=null,prevSig={},localFile=false,loading=false,lastOk=null;
