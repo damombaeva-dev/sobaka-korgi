@@ -300,7 +300,7 @@ async function load(manual){
     setStatus("ok","Обновлено "+lastOk.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"}));
   }catch(e){
     console.warn(e);
-    if(!DATA)showSetup("Не получилось открыть таблицу. Проверьте, что в Google Таблице включён доступ «Все, у кого есть ссылка — Читатель», и ссылка вставлена правильно.");
+    if(!DATA)showSetup("Не получилось открыть таблицу. Проверьте интернет. Если не помогает: в Google Таблице должен быть доступ «Все, у кого есть ссылка — Читатель».");
     setStatus("err",DATA?"Нет связи, показаны данные от "+(lastOk?lastOk.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}):"—"):"Нет данных");
   }finally{loading=false}
 }
@@ -440,17 +440,14 @@ function render(changed){
 /* экран настройки */
 function showSetup(msg){
   $("view").hidden=true;$("setup").hidden=false;$("tabs").innerHTML="";
-  $("setup").innerHTML=`<div class="setup"><h2>Подключить таблицу остатков</h2>
-  ${msg?`<p style="color:var(--bad)">${esc(msg)}</p>`:""}
-  <p>Вставьте ссылку на Google Таблицу с остатками. Сайт запомнит её в этом браузере.</p>
-  <div class="row"><input id="link" class="search" placeholder="https://docs.google.com/spreadsheets/d/…" value="${esc(SHEET?"https://docs.google.com/spreadsheets/d/"+SHEET:"")}"><button type="button" class="btn pri" id="go">Подключить</button></div>
-  <p style="margin-top:18px">Или посмотреть файл Excel с компьютера (файл никуда не отправляется):</p>
-  <div class="row"><input type="file" id="file" accept=".xlsx,.xls"></div></div>`;
-  $("go").onclick=()=>{const id=parseId($("link").value);if(!id){$("link").focus();return}SHEET=id;ls.set("ost-sheet",id);localFile=false;DATA=null;setStatus("load","Загрузка…");load(true)};
-  $("file").onchange=async e=>{const f=e.target.files[0];if(!f)return;localFile=true;const wb=XLSX.read(await f.arrayBuffer(),{type:"array",cellDates:true});DATA=null;apply(build(wb));setStatus("ok","Файл с компьютера: "+f.name+" (без автообновления)")};
+  $("setup").innerHTML=`<div class="setup"><h2>Остатки пока не загрузились</h2>
+  <p>${esc(msg||"Загружаю таблицу…")}</p>
+  <p>Сайт сам пробует снова каждые 30 секунд.</p>
+  <div class="row"><button type="button" class="btn pri" id="retry">Попробовать сейчас</button></div></div>`;
+  $("retry").onclick=()=>load(true);
 }
 
-$("reload").onclick=()=>{if(localFile){showSetup();return}load(true)};
+$("reload").onclick=()=>load(true);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
 timer=setInterval(()=>{if(!document.hidden)load()},REFRESH);
 if(SHEET)load();
