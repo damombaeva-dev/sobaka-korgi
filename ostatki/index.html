@@ -184,7 +184,7 @@ a{color:var(--accent)}
       <div class="segs" id="views"><button type="button" class="seg" data-v="xl">Как в Excel</button><button type="button" class="seg" data-v="cards">Карточки</button></div>
       <div class="segs" id="mgrs"></div>
       <label class="chk"><input type="checkbox" id="free">Только со свободным объёмом</label>
-      <label class="chk"><input type="checkbox" id="hide">Скрыть отгруженные</label>
+      <label class="chk"><input type="checkbox" id="hide">Скрыть отгруженные и отмены</label>
       <label class="chk"><input type="checkbox" id="all">Искать во всех месяцах</label>
     </div>
     <div class="sum" id="sum"></div>
@@ -256,10 +256,11 @@ function parseSheet(ws){
   sups.forEach(s=>s.items.forEach(p=>{
     p.total=p.avail.length?p.avail[0]:null;
     // отгруженные (в «Отгрузке» стоит дата) — наверх, остаток по строкам пересчитываем в новом порядке
-    p.rows.forEach(b=>b.done=b.ship instanceof Date);
-    p.rows=[...p.rows.filter(b=>b.done),...p.rows.filter(b=>!b.done)];
+    // порядок: отгруженные → отмены → активные брони
+    p.rows.forEach(b=>{b.done=b.ship instanceof Date;b.cx=!b.done&&/отмен/i.test(b.shipT+" "+b.res);b.rank=b.done?0:b.cx?1:2});
+    p.rows=[0,1,2].flatMap(k=>p.rows.filter(b=>b.rank===k));
     if(p.total!=null){let run=p.total;p.rows.forEach(b=>{b.bal=run;run-=(b.q||0)})}
-    p.rows.forEach((b,i)=>b.lastDone=b.done&&!(p.rows[i+1]&&p.rows[i+1].done)&&i<p.rows.length-1);
+    p.rows.forEach((b,i)=>b.lastDone=b.rank<2&&p.rows[i+1]&&p.rows[i+1].rank===2);
     p.booked=p.rows.reduce((s,b)=>s+(b.q||0),0);
     p.free=p.avail.length>1?p.avail[p.avail.length-1]:(p.total!=null?p.total-p.booked:null);
     const m=p.head.match(/^(.*?)(?:\s*\(|\s+-{1,3}\s|\s+\/\/|$)/);p.name=(m&&m[1].trim())||p.head;
@@ -369,8 +370,8 @@ function hl(s){return esc(s)}
 function filterProd(p){
   if(st.free&&!(p.free>0))return null;
   let rows=p.rows;
-  if(st.hide)rows=rows.filter(r=>!r.done);
-  if(mgr){rows=rows.filter(r=>r.mgr===mgr);if(!rows.length&&!p.rows.some(r=>r.mgr===mgr&&!(st.hide&&r.done)))return null}
+  if(st.hide)rows=rows.filter(r=>r.rank===2);
+  if(mgr){rows=rows.filter(r=>r.mgr===mgr);if(!rows.length&&!p.rows.some(r=>r.mgr===mgr&&!(st.hide&&r.rank<2)))return null}
   if(st.q){
     const inHead=(p.head+" "+p.sup).toLowerCase().includes(st.q)||p.notes.join(" ").toLowerCase().includes(st.q);
     const hits=rows.filter(r=>(r.client+" "+r.terms+" "+r.res+" "+r.mgr).toLowerCase().includes(st.q));
@@ -387,7 +388,7 @@ function card(f,flash){
   const fc=freeV==null?"":freeV<0?" neg":freeV===0?" zero":"";
   const rest=p.rest?esc(p.rest).replace(/(себестоимость[^·]*)/i,"<b>$1</b>"):"";
   const body=f.rows.length?`<table class="bk"><thead><tr><th>Клиент</th><th class="n">Кол-во, кг</th><th>Бронь</th><th>Отгрузка</th><th>Условия</th><th>Менеджер</th></tr></thead><tbody>${
-    f.rows.map(b=>`<tr class="${/отмен/i.test(b.shipT)?"cx":""}${b.done?" done":""}${f.hits.has(b)?" hit":""}"><td class="c"><span>${esc(b.client||"—")}</span><span class="qm">${fmt(b.q)} кг</span></td><td class="n q">${fmt(b.q)}</td><td data-l="Бронь">${esc(b.res.replace(/^бронь\s*/i,""))}</td><td class="st">${shipCell(b)}</td><td data-l="Условия">${esc(b.terms)}</td><td class="mgr" data-l="Менеджер">${esc(b.mgr)}</td></tr>`).join("")
+    f.rows.map(b=>`<tr class="${b.cx?"cx":""}${b.done?" done":""}${f.hits.has(b)?" hit":""}"><td class="c"><span>${esc(b.client||"—")}</span><span class="qm">${fmt(b.q)} кг</span></td><td class="n q">${fmt(b.q)}</td><td data-l="Бронь">${esc(b.res.replace(/^бронь\s*/i,""))}</td><td class="st">${shipCell(b)}</td><td data-l="Условия">${esc(b.terms)}</td><td class="mgr" data-l="Менеджер">${esc(b.mgr)}</td></tr>`).join("")
   }</tbody></table>`:`<div class="nobk">Броней нет</div>`;
   return `<article class="card${flash?" flash":""}">
     <div class="ch"><div><div class="sl">${esc(shortSup(p.sup))}</div><h3>${esc(p.name)}</h3>${rest?`<div class="meta">${rest}</div>`:""}</div>
@@ -406,7 +407,7 @@ function xlTable(items,t,s,changed){
     const fc=p.free==null?"":p.free<0?" neg":p.free===0?" zero":"";
     h+=`<tbody class="${fl?"flash":""}"><tr class="ph"><td colspan="7"><div class="phi"><span><b>${esc(p.name)}</b>${p.rest?` <span class="pm">${esc(p.rest)}</span>`:""}</span><span class="pf${fc}">Свободно: <b>${fmt(p.free)}</b></span></div></td></tr>`;
     f.rows.forEach(b=>{
-      const cx=/отмен/i.test(b.shipT);
+      const cx=b.cx;
       h+=`<tr class="${cx?"cx":""}${b.done?" done":""}${b.lastDone&&!st.hide?" dl":""}${f.hits.has(b)?" hit":""}"><td class="n bal">${fmt(b.bal)}</td><td class="c">${esc(b.client)}</td><td class="n">${fmt(b.q)}</td><td>${esc(b.res)}</td><td class="st">${b.ship instanceof Date?`<span class="dt">✓ ${esc(ddmm(b.ship))}</span>`:esc(b.shipT)}</td><td>${esc(b.terms)}</td><td class="mgr">${esc(b.mgr)}</td></tr>`;
     });
     h+=`<tr class="pt"><td class="n${fc}"><b>${fmt(p.free)}</b></td><td colspan="6">${p.notes.map(n=>`<span class="nt">${esc(n)}</span>`).join("")}</td></tr></tbody>`;
