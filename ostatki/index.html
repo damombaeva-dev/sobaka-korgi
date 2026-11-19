@@ -171,7 +171,7 @@ a{color:var(--accent)}
   <div class="topin">
     <div class="brand"><b>Остатки<em class="hide-m" style="font-style:normal"> по товарам</em></b><span id="status" class="load"><i></i>Загрузка…</span></div>
     <button type="button" class="btn" id="reload" title="Загрузить свежие данные сейчас">↻ <span class="hide-m">Обновить</span></button>
-    <a class="btn pri" id="edit" href="#" target="_blank" rel="noopener" hidden>✎ <span class="hide-m">Править таблицу</span><span class="show-m">Править</span></a>
+    <a class="btn" href="../" title="Перейти в сводку цен">← <span class="hide-m">Сводка цен</span><span class="show-m">Цены</span></a>
     <div class="pals" id="theme" role="group" aria-label="Оформление"><button type="button" class="pal" data-k="light" aria-pressed="true" title="Светлая тема"><span class="sw" style="background:#4f7a63;box-shadow:inset 0 0 0 5px #f1f4f0"></span><span class="lbl">Светлая</span></button><button type="button" class="pal" data-k="dark" aria-pressed="false" title="Тёмная тема"><span class="sw" style="background:#d9a46c;box-shadow:inset 0 0 0 5px #1f2228"></span><span class="lbl">Тёмная</span></button></div>
   </div>
   <div class="tabs" id="tabs" role="tablist"></div>
@@ -191,7 +191,7 @@ a{color:var(--accent)}
     <div id="list"></div>
   </div>
   <div id="setup" hidden></div>
-  <p class="foot">Данные берутся из Google Таблицы и обновляются на сайте сами каждые 30 секунд. Править остатки нужно в таблице (кнопка «Править таблицу»).</p>
+  <p class="foot">Данные берутся из Google Таблицы и обновляются на сайте сами каждые 30 секунд. Остатки правит ответственный в таблице.</p>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -318,7 +318,6 @@ function apply(tabs){
     cur=(tabs.find(t=>t.name===want)||tabs.find(t=>t.key===nk)||tabs[0]).name;
   }
   $("setup").hidden=true;$("view").hidden=false;
-  if(SHEET&&!localFile){const e=$("edit");e.href="https://docs.google.com/spreadsheets/d/"+SHEET+"/edit";e.hidden=false}
   renderTabs();renderMgrs();render(changed);
 }
 

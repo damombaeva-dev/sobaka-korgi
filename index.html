@@ -95,7 +95,8 @@ dl{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;margin:18px 0;font-
 dt{color:var(--muted)}dd{margin:0}
 @media(max-width:600px){.tl{padding-left:64px}.tl::before{left:46px}.tm{left:-64px;width:40px;font-size:12.5px}.ev::before{left:-24px}.pal span.lbl{display:none}.pal{padding:5px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
-.tabs{display:flex;gap:6px;margin:14px 0 4px}
+.tabs{display:flex;gap:6px;margin:14px 0 4px;flex-wrap:wrap}
+.tablink{text-decoration:none;color:var(--text);display:inline-flex;align-items:center}
 .tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 16px;font-size:15px;font-weight:600}
 .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .ptab{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -131,6 +132,7 @@ dt{color:var(--muted)}dd{margin:0}
     <button type="button" class="tab" role="tab" id="tb-prices" aria-selected="true" data-t="prices">Цены</button>
     <button type="button" class="tab" role="tab" id="tb-pallets" aria-selected="false" data-t="pallets">Паллеты</button>
     <button type="button" class="tab" role="tab" id="tb-sup" aria-selected="false" data-t="suppliers">Поставщики</button>
+    <a class="tab tablink" href="ostatki/">Остатки</a>
   </div>
   <section id="tabPrices">
   <div class="controls">
@@ -283,7 +285,7 @@ function loadSup(){if(SUP)return;fetch("data/suppliers.json?t="+Date.now(),{cach
 document.getElementById("sq").addEventListener("input",e=>{SQ=e.target.value.trim();renderSup()});
 const TABS={prices:"tabPrices",pallets:"tabPallets",suppliers:"tabSuppliers"};
 function showTab(t){if(!TABS[t])t="prices";for(const k in TABS)document.getElementById(TABS[k]).hidden=k!==t;document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t));if(t==="pallets")loadPal();if(t==="suppliers")loadSup();const h=t==="prices"?"":"#"+t;if(location.hash!==h)history.replaceState(null,"",h||location.pathname+location.search)}
-document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b)showTab(b.dataset.t)});
+document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b&&b.dataset.t)showTab(b.dataset.t)});
 showTab(location.hash.slice(1)||"prices");
 })();
 </script>
