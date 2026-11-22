@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Подбор спецификаций</title>
+<style>
+:root{
+  --bg:#f1f4f0;--surface:#fff;--text:#1f2a24;--muted:#6b7a71;--line:#dfe6e0;--line2:#edf1ed;--chip:#eef2ee;
+  --accent:#4f7a63;--on-accent:#fff;--ring:rgba(79,122,99,.18);
+  --bad:#b54034;--bad-bg:#fbeeec;--ok:#2f7a4f;--ok-bg:#eaf5ee;--warn:#a5650f;--warn-bg:#fcf3e3;
+  --bar:#e3e9e4;--lock:#b9c2bc;
+  --font:Inter,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+:root[data-pal="dark"]{
+  color-scheme:dark;--bg:#1f2228;--surface:#282c34;--text:#e3e6ec;--muted:#9aa1ad;--line:#363b45;--line2:#30353e;--chip:#30353e;
+  --accent:#d9a46c;--on-accent:#1f2228;--ring:rgba(217,164,108,.2);
+  --bad:#f0968c;--bad-bg:#3b2b2d;--ok:#8fd1a8;--ok-bg:#263a2f;--warn:#e6c07b;--warn-bg:#3a3326;
+  --bar:#353a44;--lock:#555c69;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 var(--font);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+.top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.wrap{max-width:1320px;margin:0 auto;padding:0 16px}
+.bar1{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0 10px}
+.brand{font-weight:700;font-size:18px;margin-right:auto}
+.brand small{display:block;font-weight:500;font-size:12.5px;color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:7px 12px;font-size:14px;text-decoration:none;color:var(--text);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.btn.ghost{background:none}
+.btn.bad{color:var(--bad)}
+.pals{display:flex;gap:4px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px}
+.pal{border:0;background:none;border-radius:999px;padding:4px 10px;font-size:13px;color:var(--muted)}
+.pal[aria-pressed="true"]{background:var(--chip);color:var(--text);font-weight:600}
+.sum{display:flex;gap:8px;flex-wrap:wrap;padding:0 0 12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:13px;color:var(--muted)}
+.kpi b{display:block;font-size:17px;color:var(--text)}
+.kpi.bad b{color:var(--bad)} .kpi.ok b{color:var(--ok)}
+.grid{display:grid;grid-template-columns:minmax(280px,380px) minmax(0,1fr);gap:18px;padding:16px 16px 60px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}.top{position:static}.term{white-space:nowrap}}
+.col{min-width:0}
+.col h2{flex-wrap:wrap;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.col h2 .btn{text-transform:none;letter-spacing:0;padding:4px 10px;font-size:13px}
+.clients{position:sticky;top:120px;max-height:calc(100vh - 130px);overflow:auto;padding:4px;margin:-4px;border-radius:14px}
+@media (max-width:820px){.clients{position:static;max-height:none}}
+.clients.drop{outline:2px dashed var(--accent);outline-offset:2px}
+.hint{font-size:13px;color:var(--muted);margin:0 0 10px}
+/* клиент */
+.cl{position:relative;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:14px;padding:10px 12px 10px 12px;margin-bottom:9px;cursor:grab;user-select:none;touch-action:manipulation}
+.cl.done{opacity:.55}
+.cl.sel{box-shadow:0 0 0 3px var(--ring);border-color:var(--accent)}
+.cl .r1{display:flex;align-items:baseline;gap:8px}
+.cl .nm{font-weight:700}
+.cl .left{margin-left:auto;font-weight:700;font-size:17px}
+.cl .left small{font-weight:500;font-size:12px;color:var(--muted)}
+.cl .meta{font-size:12.5px;color:var(--muted)}
+.cl .fill{height:6px;border-radius:4px;background:var(--bar);margin-top:7px;overflow:hidden}
+.cl .fill i{display:block;height:100%;background:var(--c)}
+.cl .where{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.cl .where span{font-size:11.5px;background:var(--chip);border-radius:6px;padding:1px 6px;color:var(--muted)}
+.edit{border:0;background:none;color:var(--muted);padding:0 2px;font-size:13px}
+/* спецификации */
+.specs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:12px}
+.sp{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px 12px 12px;min-height:120px;transition:box-shadow .15s}
+.sp.drop{box-shadow:0 0 0 3px var(--ring);border-color:var(--accent)}
+.sp.tgt{cursor:pointer;border-style:dashed;border-color:var(--accent)}
+.sp .r1{display:flex;align-items:baseline;gap:8px}
+.sp .nm{font-weight:700}
+.sp .term{font-size:12px;border-radius:6px;padding:1px 7px;background:var(--ok-bg);color:var(--ok);font-weight:600}
+.sp .term.pre{background:var(--chip);color:var(--muted)}
+.sp .free{margin-left:auto;font-weight:700}
+.sp .free.z{color:var(--muted);font-weight:500}
+.sp .free.neg{color:var(--bad)}
+.sp .meta{font-size:12.5px;color:var(--muted)}
+.cap{display:flex;height:12px;border-radius:6px;background:var(--bar);overflow:hidden;margin:8px 0}
+.cap i{display:block;height:100%;border-right:1px solid var(--surface)}
+.chips{display:flex;flex-direction:column;gap:5px}
+.chip{display:flex;align-items:center;gap:8px;border-radius:10px;padding:5px 8px 5px 10px;background:color-mix(in srgb,var(--c) 16%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 45%,var(--surface));font-size:13.5px;cursor:grab;user-select:none}
+.chip.lock{--c:var(--lock);cursor:default}
+.chip.sel{box-shadow:0 0 0 3px var(--ring)}
+.chip .k{margin-left:auto;font-weight:700}
+.chip .w{color:var(--bad);font-size:12px}
+.chip small{color:var(--muted)}
+.empty{font-size:13px;color:var(--muted);padding:8px 0}
+/* модалка */
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text);padding:18px;width:min(440px,calc(100vw - 32px));box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+dialog h3{margin:0 0 4px;font-size:17px}
+dialog p{margin:0 0 12px;color:var(--muted);font-size:13.5px}
+.fld{display:block;margin-bottom:10px;font-size:13px;color:var(--muted)}
+.fld input,.fld select,.fld textarea{display:block;width:100%;margin-top:4px;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:8px 10px;font-size:15px;color:var(--text)}
+.fld textarea{min-height:170px;font-size:13.5px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.big{font-size:24px!important;font-weight:700;text-align:center}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin:-2px 0 12px}
+.quick button{border:1px solid var(--line);background:var(--chip);border-radius:8px;padding:4px 9px;font-size:13px}
+.acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
+.acts .sp1{margin-right:auto}
+.warn{background:var(--warn-bg);color:var(--warn);border-radius:9px;padding:7px 10px;font-size:13px;margin-bottom:10px}
+.warn.bad{background:var(--bad-bg);color:var(--bad)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+.toast.on{opacity:1}
+.welcome{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:18px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="bar1">
+    <div class="brand">Подбор спецификаций<small>Перетащите клиента в спецификацию. На телефоне: нажмите клиента, потом спецификацию.</small></div>
+    <div class="pals" id="theme"><button class="pal" data-k="light" aria-pressed="false">Светлая</button><button class="pal" data-k="dark" aria-pressed="false">Тёмная</button></div>
+  </div>
+  <div class="sum" id="sum"></div>
+</div></header>
+
+<main class="wrap grid">
+  <section class="col">
+    <h2>Клиенты <button class="btn" id="addC">+ Клиент</button><button class="btn" id="paste">Вставить список</button></h2>
+    <div class="clients" id="clients"></div>
+  </section>
+  <section class="col">
+    <h2>Спецификации
+      <button class="btn" id="addS">+ Спецификация</button>
+      <button class="btn" id="auto" title="Разложить нераспределённые объёмы автоматически">Авто-подбор</button>
+      <button class="btn" id="share">Ссылка</button>
+      <button class="btn" id="csv">Скачать CSV</button>
+      <button class="btn bad" id="reset">Очистить</button>
+    </h2>
+    <div class="specs" id="specs"></div>
+  </section>
+</main>
+
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const KEY="podbor-v1";
+const MONTHS=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+const MSHORT=["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+const PALETTE=["#4e79a7","#e15759","#59a14f","#f28e2b","#b07aa1","#76b7b2","#edc948","#9c755f","#ff9da7","#2f6f8f","#8cb369","#c46e3a","#6a5acd","#d4a017"];
+const fmt=n=>Math.round(n).toLocaleString("ru-RU").replace(/,/g," ");
+const mLabel=m=>{if(!m)return"";const[y,mm]=m.split("-");return MONTHS[+mm-1]+" "+y};
+const mShort=m=>{if(!m)return"";const[y,mm]=m.split("-");return MSHORT[+mm-1]+" "+y.slice(2)};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let S={clients:[],specs:[],alloc:[]};
+let sel=null; // {type:'client'|'chip', id}
+
+/* ---------- данные ---------- */
+function load(){
+  const h=location.hash.match(/[#&]d=([^&]+)/);
+  if(h){try{S=dec(h[1]);save();history.replaceState(null,"",location.pathname);toast("Данные из ссылки загружены");return}catch(e){toast("Ссылка повреждена")}}
+  const v=ls.get(KEY);if(v){try{S=JSON.parse(v)}catch(e){}}
+  S.clients=S.clients||[];S.specs=S.specs||[];S.alloc=S.alloc||[];
+}
+function save(){ls.set(KEY,JSON.stringify(S))}
+function enc(o){const b=new TextEncoder().encode(JSON.stringify(o));let s="";b.forEach(x=>s+=String.fromCharCode(x));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function dec(t){t=t.replace(/-/g,"+").replace(/_/g,"/");const s=atob(t);const b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i);return JSON.parse(new TextDecoder().decode(b))}
+
+const C=id=>S.clients.find(c=>c.id===id);
+const SP=id=>S.specs.find(s=>s.id===id);
+const placed=cid=>S.alloc.filter(a=>a.c===cid).reduce((t,a)=>t+a.kg,0);
+const left=c=>c.kg-placed(c.id);
+const lockedKg=s=>(s.locked||[]).reduce((t,l)=>t+l.kg,0);
+const used=sid=>S.alloc.filter(a=>a.s===sid).reduce((t,a)=>t+a.kg,0)+lockedKg(SP(sid));
+const free=s=>s.cap-used(s.id);
+function colorOf(name){const names=[...new Set(S.clients.map(c=>c.name.trim().toLowerCase()))];const i=names.indexOf(name.trim().toLowerCase());return PALETTE[(i<0?0:i)%PALETTE.length]}
+function issues(c,s){
+  const w=[];
+  if(c.term>s.term)w.push(`клиенту нужна отсрочка ${c.term} к.д., а в спецификации ${s.term?s.term+" к.д.":"предоплата"}`);
+  if(c.month&&s.month&&s.month>c.month)w.push(`спецификация на ${mLabel(s.month)}, а клиенту нужно в ${mLabel(c.month)}`);
+  return w;
+}
+
+/* ---------- отрисовка ---------- */
+function render(){
+  save();
+  const need=S.clients.reduce((t,c)=>t+c.kg,0),pl=S.clients.reduce((t,c)=>t+Math.min(c.kg,placed(c.id)),0);
+  const fr=S.specs.reduce((t,s)=>t+Math.max(0,free(s)),0);
+  const bad=S.alloc.filter(a=>C(a.c)&&SP(a.s)&&issues(C(a.c),SP(a.s)).length).length;
+  $("sum").innerHTML=`<div class="kpi">Нужно<b>${fmt(need)} кг</b></div><div class="kpi ok">Распределено<b>${fmt(pl)} кг</b></div><div class="kpi ${need-pl>0?"bad":""}">Без спецификации<b>${fmt(need-pl)} кг</b></div><div class="kpi">Свободно в спецификациях<b>${fmt(fr)} кг</b></div>${bad?`<div class="kpi bad">Несовпадений<b>${bad}</b></div>`:""}`;
+  // клиенты
+  const cl=$("clients");
+  if(!S.clients.length){cl.innerHTML=`<div class="welcome">Клиентов пока нет. Нажмите «Вставить список» и вставьте строки вида<br><b>Клиент 5004кг ноябрь 2026 14кд</b></div>`}
+  else cl.innerHTML=S.clients.map(c=>{
+    const l=left(c),p=Math.min(100,(c.kg-l)/c.kg*100);
+    const wh=S.alloc.filter(a=>a.c===c.id).map(a=>`<span>${esc(SP(a.s)?.name||"?")}: ${fmt(a.kg)}</span>`).join("");
+    return `<div class="cl ${l<=0?"done":""} ${sel&&sel.type==="client"&&sel.id===c.id?"sel":""}" draggable="${l>0}" data-c="${c.id}" style="--c:${colorOf(c.name)}">
+      <div class="r1"><span class="nm">${esc(c.name)}</span><button class="edit" data-ec="${c.id}" title="Изменить">✎</button><span class="left">${l<0?"−":""}${fmt(Math.abs(l))}<small> ${l>0?"осталось":l<0?"лишнее":"✓"}</small></span></div>
+      <div class="meta">${fmt(c.kg)} кг · ${mLabel(c.month)||"месяц не указан"} · ${c.term?c.term+" к.д.":"предоплата"}</div>
+      <div class="fill"><i style="width:${p}%"></i></div>${wh?`<div class="where">${wh}</div>`:""}</div>`}).join("");
+  // спецификации
+  const sp=$("specs");
+  if(!S.specs.length){sp.innerHTML=`<div class="welcome">Спецификаций пока нет. Нажмите «+ Спецификация».</div>`;return}
+  sp.innerHTML=S.specs.map(s=>{
+    const f=free(s);const al=S.alloc.filter(a=>a.s===s.id);
+    const segs=(s.locked||[]).map(l=>`<i style="width:${l.kg/s.cap*100}%;background:var(--lock)" title="${esc(l.label)}"></i>`).join("")+al.map(a=>`<i style="width:${a.kg/s.cap*100}%;background:${colorOf(C(a.c)?.name||"")}" title="${esc(C(a.c)?.name)}"></i>`).join("");
+    const chips=(s.locked||[]).map((l,i)=>`<div class="chip lock" title="Занято, не двигается"><span>🔒 ${esc(l.label)}</span><span class="k">${fmt(l.kg)}</span><button class="edit" data-el="${s.id}:${i}" title="Изменить">✎</button></div>`).join("")+
+      al.map(a=>{const c=C(a.c);if(!c)return"";const w=issues(c,s);return `<div class="chip ${sel&&sel.type==="chip"&&sel.id===a.id?"sel":""}" draggable="true" data-a="${a.id}" style="--c:${colorOf(c.name)}" title="${esc(w.join("; "))}"><span>${esc(c.name)} <small>${mShort(c.month)}</small></span>${w.length?`<span class="w">⚠</span>`:""}<span class="k">${fmt(a.kg)}</span></div>`}).join("");
+    return `<div class="sp ${sel?"tgt":""}" data-s="${s.id}">
+      <div class="r1"><span class="nm">${esc(s.name)}</span><span class="term ${s.term?"":"pre"}">${s.term?s.term+" к.д.":"предоплата"}</span><button class="edit" data-es="${s.id}" title="Изменить">✎</button><span class="free ${f<0?"neg":f===0?"z":""}">${f<0?"перебор "+fmt(-f):f===0?"заполнена":"свободно "+fmt(f)}</span></div>
+      <div class="meta">${esc(s.note||"")}${s.note?" · ":""}${mLabel(s.month)||""} · объём ${fmt(s.cap)} кг</div>
+      <div class="cap">${segs}</div>
+      <div class="chips">${chips||`<div class="empty">Перетащите сюда клиента</div>`}</div></div>`}).join("");
+}
+
+/* ---------- перетаскивание и выбор ---------- */
+let drag=null;
+document.addEventListener("dragstart",e=>{
+  const c=e.target.closest?.(".cl[data-c]"),a=e.target.closest?.(".chip[data-a]");
+  if(c)drag={type:"client",id:c.dataset.c};else if(a)drag={type:"chip",id:a.dataset.a};else return;
+  e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",drag.id);
+});
+document.addEventListener("dragend",()=>{drag=null;document.querySelectorAll(".drop").forEach(x=>x.classList.remove("drop"))});
+document.addEventListener("dragover",e=>{
+  if(!drag)return;const t=e.target.closest(".sp[data-s]")||(drag.type==="chip"&&e.target.closest("#clients"));
+  document.querySelectorAll(".drop").forEach(x=>x!==t&&x.classList.remove("drop"));
+  if(t){e.preventDefault();t.classList.add("drop")}
+});
+document.addEventListener("drop",e=>{
+  if(!drag)return;e.preventDefault();const d=drag;drag=null;
+  document.querySelectorAll(".drop").forEach(x=>x.classList.remove("drop"));
+  const t=e.target.closest(".sp[data-s]");
+  if(t)askPlace(d,t.dataset.s);else if(d.type==="chip"&&e.target.closest("#clients")){S.alloc=S.alloc.filter(a=>a.id!==d.id);render();toast("Вернула клиенту")}
+});
+document.addEventListener("click",e=>{
+  const ec=e.target.closest("[data-ec]"),es=e.target.closest("[data-es]"),el=e.target.closest("[data-el]");
+  if(ec)return editClient(ec.dataset.ec);if(es)return editSpec(es.dataset.es);if(el){const[sid,i]=el.dataset.el.split(":");return editLock(sid,+i)}
+  const c=e.target.closest(".cl[data-c]"),a=e.target.closest(".chip[data-a]"),s=e.target.closest(".sp[data-s]");
+  if(s&&sel&&(sel.type==="client"||(a?S.alloc.find(x=>x.id===a.dataset.a)?.s:s.dataset.s)!==S.alloc.find(x=>x.id===sel.id)?.s)){const d=sel;sel=null;askPlace(d,s.dataset.s);return}
+  if(a){ if(sel&&sel.type==="chip"&&sel.id===a.dataset.a){sel=null;editChip(a.dataset.a);render();return} sel={type:"chip",id:a.dataset.a};render();toast("Нажмите спецификацию, куда перенести, или ещё раз на плашку, чтобы изменить");return}
+  if(c){ if(left(C(c.dataset.c))<=0){toast("Этот клиент уже распределён");return} sel=sel&&sel.id===c.dataset.c?null:{type:"client",id:c.dataset.c};render();if(sel)toast("Теперь нажмите спецификацию");return}
+  if(s&&sel){const d=sel;sel=null;askPlace(d,s.dataset.s);return}
+});
+
+/* ---------- окно «сколько поставить» ---------- */
+function askPlace(d,sid){
+  const s=SP(sid);let c,max,curA=null;
+  if(d.type==="client"){c=C(d.id);max=left(c)}else{curA=S.alloc.find(a=>a.id===d.id);if(!curA)return;if(curA.s===sid){render();return}c=C(curA.c);max=curA.kg}
+  const fr=Math.max(0,free(s)),def=Math.min(max,fr)||max;
+  const w=issues(c,s);
+  openDlg(`<h3>${esc(c.name)} → ${esc(s.name)}</h3>
+    <p>${d.type==="chip"?"Перенос из «"+esc(SP(curA.s).name)+"». ":""}Нужно ${fmt(max)} кг, свободно в спецификации ${fmt(fr)} кг.</p>
+    ${w.map(x=>`<div class="warn">⚠ ${esc(x)}</div>`).join("")}
+    <label class="fld">Сколько кг поставить<input class="big" id="q" type="number" min="1" step="1" value="${def}"></label>
+    <div class="quick"><button data-v="${max}">Весь объём ${fmt(max)}</button>${fr>0&&fr<max?`<button data-v="${fr}">Сколько влезет ${fmt(fr)}</button>`:""}${max>=36?`<button data-v="${Math.round(max/2/18)*18}">Половина</button>`:""}</div>
+    <div id="qw"></div>
+    <div class="acts"><button class="btn" data-x>Отмена</button><button class="btn pri" id="ok">Поставить</button></div>`,dl=>{
+      const q=dl.querySelector("#q"),qw=dl.querySelector("#qw");
+      const chk=()=>{const v=+q.value;qw.innerHTML=v>fr?`<div class="warn bad">Не влезает: перебор ${fmt(v-fr)} кг</div>`:v>max?`<div class="warn bad">Больше, чем нужно клиенту</div>`:""};
+      q.addEventListener("input",chk);chk();q.select();
+      dl.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{q.value=b.dataset.v;chk()});
+      dl.querySelector("#ok").onclick=()=>{const v=Math.round(+q.value);if(!(v>0))return;
+        if(d.type==="client")addAlloc(c.id,sid,v);
+        else{addAlloc(c.id,sid,Math.min(v,curA.kg));curA.kg-=Math.min(v,curA.kg);if(curA.kg<=0)S.alloc=S.alloc.filter(a=>a!==curA)}
+        closeDlg();render()};
+      q.addEventListener("keydown",e=>{if(e.key==="Enter")dl.querySelector("#ok").click()});
+  });
+}
+function addAlloc(cid,sid,kg){const ex=S.alloc.find(a=>a.c===cid&&a.s===sid);if(ex)ex.kg+=kg;else S.alloc.push({id:uid(),c:cid,s:sid,kg})}
+function editChip(aid){
+  const a=S.alloc.find(x=>x.id===aid);const c=C(a.c),s=SP(a.s);
+  openDlg(`<h3>${esc(c.name)} в «${esc(s.name)}»</h3><p>Измените объём или верните клиенту.</p>
+    <label class="fld">Кг в этой спецификации<input class="big" id="q" type="number" min="0" value="${a.kg}"></label>
+    <div class="acts"><button class="btn bad sp1" id="del">Вернуть клиенту</button><button class="btn" data-x>Отмена</button><button class="btn pri" id="ok">Сохранить</button></div>`,dl=>{
+      dl.querySelector("#del").onclick=()=>{S.alloc=S.alloc.filter(x=>x!==a);closeDlg();render()};
+      dl.querySelector("#ok").onclick=()=>{const v=Math.round(+dl.querySelector("#q").value);if(v>0)a.kg=v;else S.alloc=S.alloc.filter(x=>x!==a);closeDlg();render()};
+  });
+}
+
+/* ---------- клиенты и спецификации ---------- */
+function monthOptions(v){const o=[`<option value="">—</option>`];for(let y=2026;y<=2027;y++)for(let m=1;m<=12;m++){const k=`${y}-${String(m).padStart(2,"0")}`;o.push(`<option value="${k}" ${k===v?"selected":""}>${mLabel(k)}</option>`)}return o.join("")}
+function editClient(id){
+  const c=id?C(id):{name:"",kg:"",month:"",term:14};
+  openDlg(`<h3>${id?"Клиент":"Новый клиент"}</h3>
+    <label class="fld">Название<input id="n" value="${esc(c.name)}"></label>
+    <div class="row2"><label class="fld">Объём, кг<input id="k" type="number" value="${c.kg}"></label><label class="fld">Отсрочка, к.д. (0 = предоплата)<input id="t" type="number" value="${c.term}"></label></div>
+    <label class="fld">Месяц<select id="m">${monthOptions(c.month)}</select></label>
+    <div class="acts">${id?`<button class="btn bad sp1" id="del">Удалить</button>`:""}<button class="btn" data-x>Отмена</button><button class="btn pri" id="ok">Сохранить</button></div>`,dl=>{
+      if(id)dl.querySelector("#del").onclick=()=>{S.clients=S.clients.filter(x=>x.id!==id);S.alloc=S.alloc.filter(a=>a.c!==id);closeDlg();render()};
+      dl.querySelector("#ok").onclick=()=>{const n=dl.querySelector("#n").value.trim(),k=Math.round(+dl.querySelector("#k").value);if(!n||!(k>0))return;
+        const o={name:n,kg:k,term:+dl.querySelector("#t").value||0,month:dl.querySelector("#m").value};
+        if(id)Object.assign(C(id),o);else S.clients.push({id:uid(),...o});closeDlg();render()};
+  });
+}
+function editSpec(id){
+  const s=id?SP(id):{name:"Спец. ",cap:"",term:30,month:"",note:""};
+  openDlg(`<h3>${id?"Спецификация":"Новая спецификация"}</h3>
+    <div class="row2"><label class="fld">Название<input id="n" value="${esc(s.name)}"></label><label class="fld">Объём, кг<input id="k" type="number" value="${s.cap}"></label></div>
+    <div class="row2"><label class="fld">Отсрочка, к.д. (0 = предоплата)<input id="t" type="number" value="${s.term}"></label><label class="fld">Приход / выборка<select id="m">${monthOptions(s.month)}</select></label></div>
+    <label class="fld">Пометка (товар, поставщик)<input id="o" value="${esc(s.note||"")}"></label>
+    <div class="acts">${id?`<button class="btn sp1" id="lock">+ Занято другими</button><button class="btn bad" id="del">Удалить</button>`:""}<button class="btn" data-x>Отмена</button><button class="btn pri" id="ok">Сохранить</button></div>`,dl=>{
+      if(id){dl.querySelector("#del").onclick=()=>{S.specs=S.specs.filter(x=>x.id!==id);S.alloc=S.alloc.filter(a=>a.s!==id);closeDlg();render()};
+        dl.querySelector("#lock").onclick=()=>{(s.locked=s.locked||[]).push({label:"Занято",kg:0});closeDlg();editLock(id,s.locked.length-1)}}
+      dl.querySelector("#ok").onclick=()=>{const n=dl.querySelector("#n").value.trim(),k=Math.round(+dl.querySelector("#k").value);if(!n||!(k>0))return;
+        const o={name:n,cap:k,term:+dl.querySelector("#t").value||0,month:dl.querySelector("#m").value,note:dl.querySelector("#o").value.trim()};
+        if(id)Object.assign(SP(id),o);else S.specs.push({id:uid(),locked:[],...o});closeDlg();render()};
+  });
+}
+function editLock(sid,i){
+  const s=SP(sid),l=s.locked[i];
+  openDlg(`<h3>Занято в «${esc(s.name)}»</h3><p>Объём, который не участвует в подборе (уже отгружено или бронь без отсрочки).</p>
+    <div class="row2"><label class="fld">Кто / что<input id="n" value="${esc(l.label)}"></label><label class="fld">Кг<input id="k" type="number" value="${l.kg}"></label></div>
+    <div class="acts"><button class="btn bad sp1" id="del">Убрать</button><button class="btn" data-x>Отмена</button><button class="btn pri" id="ok">Сохранить</button></div>`,dl=>{
+      dl.querySelector("#del").onclick=()=>{s.locked.splice(i,1);closeDlg();render()};
+      dl.querySelector("#ok").onclick=()=>{l.label=dl.querySelector("#n").value.trim()||"Занято";l.kg=Math.max(0,Math.round(+dl.querySelector("#k").value));if(!l.kg)s.locked.splice(i,1);closeDlg();render()};
+  });
+}
+function parseLines(t){
+  const out=[];
+  for(let line of t.split(/\n/)){
+    line=line.replace(/^[\s*•\-–\d.)]*(?=\D)/,"").trim();if(!line)continue;
+    const kgm=line.match(/(\d[\d\s]*[.,]?\d*)\s*кг/i)||line.match(/(\d{3,}[\d\s]*)/);if(!kgm)continue;
+    const kg=Math.round(parseFloat(kgm[1].replace(/\s/g,"").replace(",",".")));
+    let name=line.slice(0,kgm.index).trim().replace(/[,;:–-]+$/,"").trim();
+    const low=line.toLowerCase();let month="";
+    MONTHS.forEach((m,i)=>{const re=new RegExp(m.slice(0,3)+"[а-я]*\\s*(20\\d\\d)?");const mm=low.slice(kgm.index).match(re);if(mm&&!month){const y=mm[1]||"2026";month=`${y}-${String(i+1).padStart(2,"0")}`}});
+    const tm=low.match(/(\d+)\s*к\.?\s*д/);const term=tm?+tm[1]:(/предоплат/.test(low)?0:14);
+    if(name&&kg>0)out.push({id:uid(),name,kg,month,term});
+  }
+  return out;
+}
+function pasteList(){
+  openDlg(`<h3>Вставить список клиентов</h3><p>По одной строке на бронь: клиент, объём, месяц, отсрочка. Например: «Клиент 5004кг ноябрь 2026 14кд».</p>
+    <label class="fld"><textarea id="t" placeholder="Клиент 5004кг ноябрь 2026 14кд"></textarea></label>
+    <label class="fld" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rep" style="width:auto;margin:0"> заменить текущий список</label>
+    <div class="acts"><button class="btn" data-x>Отмена</button><button class="btn pri" id="ok">Добавить</button></div>`,dl=>{
+      dl.querySelector("#ok").onclick=()=>{const r=parseLines(dl.querySelector("#t").value);if(!r.length){toast("Не нашла ни одной строки с объёмом");return}
+        if(dl.querySelector("#rep").checked){S.clients=[];S.alloc=[]}S.clients.push(...r);closeDlg();render();toast(`Добавлено: ${r.length}`)};
+  });
+}
+
+/* ---------- авто-подбор ---------- */
+function autoFit(){
+  let n=0;
+  const cl=[...S.clients].sort((a,b)=>(a.month||"9").localeCompare(b.month||"9")||b.term-a.term);
+  for(const c of cl){
+    let l=left(c);if(l<=0)continue;
+    const ok=S.specs.filter(s=>free(s)>0&&!issues(c,s).length)
+      .sort((a,b)=>(b.month||"").localeCompare(a.month||"")||(a.term-c.term)-(b.term-c.term)||free(a)-free(b));
+    for(const s of ok){if(l<=0)break;const v=Math.min(l,free(s));if(v>0){addAlloc(c.id,s.id,v);l-=v;n++}}
+  }
+  render();toast(n?`Разложено кусков: ${n}`:"Нечего раскладывать без нарушений");
+}
+
+/* ---------- прочее ---------- */
+const dlg=$("dlg");
+function openDlg(html,init){dlg.innerHTML=html;dlg.querySelectorAll("[data-x]").forEach(b=>b.onclick=closeDlg);dlg.showModal();init&&init(dlg)}
+function closeDlg(){dlg.close()}
+dlg.addEventListener("click",e=>{if(e.target===dlg)closeDlg()});
+let tt;function toast(t){const el=$("toast");el.textContent=t;el.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>el.classList.remove("on"),2600)}
+$("addC").onclick=()=>editClient(null);
+$("addS").onclick=()=>editSpec(null);
+$("paste").onclick=pasteList;
+$("auto").onclick=autoFit;
+$("reset").onclick=()=>openDlg(`<h3>Очистить?</h3><p>Можно убрать только распределение (клиенты и спецификации останутся) или всё целиком.</p>
+  <div class="acts"><button class="btn" data-x>Отмена</button><button class="btn" id="a">Только распределение</button><button class="btn bad" id="b">Всё</button></div>`,dl=>{
+  dl.querySelector("#a").onclick=()=>{S.alloc=[];closeDlg();render()};dl.querySelector("#b").onclick=()=>{S={clients:[],specs:[],alloc:[]};closeDlg();render()}});
+$("share").onclick=()=>{
+  const url=location.origin+location.pathname+"#d="+enc(S);
+  const done=()=>toast("Ссылка скопирована: по ней откроется эта же раскладка");
+  if(navigator.clipboard)navigator.clipboard.writeText(url).then(done,()=>prompt("Скопируйте ссылку",url));else prompt("Скопируйте ссылку",url);
+};
+$("csv").onclick=()=>{
+  const rows=[["Клиент","Месяц","Отсрочка клиента","Спецификация","Отсрочка спец.","Кг","Замечания"]];
+  for(const c of S.clients){const al=S.alloc.filter(a=>a.c===c.id);for(const a of al){const s=SP(a.s);rows.push([c.name,mLabel(c.month),c.term,s.name,s.term,a.kg,issues(c,s).join("; ")])}const l=left(c);if(l>0)rows.push([c.name,mLabel(c.month),c.term,"НЕ РАСПРЕДЕЛЕНО","",l,""])}
+  const csv="﻿"+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="podbor.csv";a.click();
+};
+const root=document.documentElement;
+function setTheme(d){if(d)root.dataset.pal="dark";else delete root.dataset.pal;document.querySelectorAll("#theme .pal").forEach(b=>b.setAttribute("aria-pressed",(b.dataset.k==="dark")===d))}
+(function(){const v=ls.get("ost-theme");setTheme(v?v==="dark":!!(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches))})();
+$("theme").addEventListener("click",e=>{const b=e.target.closest(".pal");if(!b)return;const d=b.dataset.k==="dark";setTheme(d);ls.set("ost-theme",d?"dark":"light")});
+window.addEventListener("hashchange",()=>{if(/[#&]d=/.test(location.hash)){load();render()}});
+load();render();
+</script>
+</body>
+</html>
