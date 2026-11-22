@@ -189,7 +189,7 @@ function render(){
   $("sum").innerHTML=`<div class="kpi">Нужно<b>${fmt(need)} кг</b></div><div class="kpi ok">Распределено<b>${fmt(pl)} кг</b></div><div class="kpi ${need-pl>0?"bad":""}">Без спецификации<b>${fmt(need-pl)} кг</b></div><div class="kpi">Свободно в спецификациях<b>${fmt(fr)} кг</b></div>${bad?`<div class="kpi bad">Несовпадений<b>${bad}</b></div>`:""}`;
   // клиенты
   const cl=$("clients");
-  if(!S.clients.length){cl.innerHTML=`<div class="welcome">Клиентов пока нет. Нажмите «Вставить список» и вставьте строки вида<br><b>Фудс 5004кг ноябрь 2026 14кд</b></div>`}
+  if(!S.clients.length){cl.innerHTML=`<div class="welcome">Клиентов пока нет. Нажмите «Вставить список» и вставьте строки вида<br><b>Клиент 5004кг ноябрь 2026 14кд</b></div>`}
   else cl.innerHTML=S.clients.map(c=>{
     const l=left(c),p=Math.min(100,(c.kg-l)/c.kg*100);
     const wh=S.alloc.filter(a=>a.c===c.id).map(a=>`<span>${esc(SP(a.s)?.name||"?")}: ${fmt(a.kg)}</span>`).join("");
@@ -329,8 +329,8 @@ function parseLines(t){
   return out;
 }
 function pasteList(){
-  openDlg(`<h3>Вставить список клиентов</h3><p>По одной строке на бронь: клиент, объём, месяц, отсрочка. Например: «Фудс 5004кг ноябрь 2026 14кд».</p>
-    <label class="fld"><textarea id="t" placeholder="Фудс 5004кг ноябрь 2026 14кд"></textarea></label>
+  openDlg(`<h3>Вставить список клиентов</h3><p>По одной строке на бронь: клиент, объём, месяц, отсрочка. Например: «Клиент 5004кг ноябрь 2026 14кд».</p>
+    <label class="fld"><textarea id="t" placeholder="Клиент 5004кг ноябрь 2026 14кд"></textarea></label>
     <label class="fld" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rep" style="width:auto;margin:0"> заменить текущий список</label>
     <div class="acts"><button class="btn" data-x>Отмена</button><button class="btn pri" id="ok">Добавить</button></div>`,dl=>{
       dl.querySelector("#ok").onclick=()=>{const r=parseLines(dl.querySelector("#t").value);if(!r.length){toast("Не нашла ни одной строки с объёмом");return}
