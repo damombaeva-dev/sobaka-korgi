@@ -261,25 +261,69 @@ function pollTelegram() {
   p.setProperty('TG_OFFSET', String(last));
 }
 
+const MON_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const MON_S = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+function ymd_(s) { const p = String(s).split('-').map(Number); return { y: p[0], m: p[1], d: p[2] }; }
+function lastDay_(y, m) { return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
+
+/** Срок словами: «14–18 декабря», «28 ноября – 5 декабря», «весь декабрь», «до 18 декабря» */
+function winText_(from, to, withYear) {
+  if (!from && !to) return 'срок не указан';
+  const a = ymd_(from || to), b = ymd_(to || from);
+  const yr = withYear ? ' ' + b.y : '';
+  if (a.y === b.y && a.m === b.m && a.d === 1 && b.d === lastDay_(b.y, b.m)) return 'весь ' + MONTHS[b.m - 1] + yr;
+  if (from === to || !from) return (from ? '' : 'до ') + b.d + ' ' + MON_GEN[b.m - 1] + yr;
+  if (a.y === b.y && a.m === b.m) return a.d + '–' + b.d + ' ' + MON_GEN[b.m - 1] + yr;
+  return a.d + ' ' + MON_GEN[a.m - 1] + ' – ' + b.d + ' ' + MON_GEN[b.m - 1] + yr;
+}
+function winShort_(from, to) {
+  const a = ymd_(from || to), b = ymd_(to || from);
+  if (a.y === b.y && a.m === b.m && a.d === 1 && b.d === lastDay_(b.y, b.m)) return MONTHS[b.m - 1];
+  if (from === to || !from) return b.d + ' ' + MON_S[b.m - 1];
+  if (a.m === b.m) return a.d + '–' + b.d + ' ' + MON_S[b.m - 1];
+  return a.d + ' ' + MON_S[a.m - 1] + ' – ' + b.d + ' ' + MON_S[b.m - 1];
+}
+function daysText_(it) {
+  const t = today_(), end = it.to || it.from, st = it.from || it.to;
+  if (!end) return '';
+  const dd = (a, b) => Math.round((new Date(b + 'T12:00:00Z') - new Date(a + 'T12:00:00Z')) / 864e5);
+  if (end < t) return '⚠️ просрочено на ' + dd(end, t) + ' дн.';
+  if (st > t) return 'начало через ' + dd(t, st) + ' дн.';
+  const n = dd(t, end);
+  return n === 0 ? '❗ последний день' : 'осталось ' + n + ' дн.';
+}
+function specText_(it) {
+  const s = String(it.ourSpec || '').trim();
+  if (!s && !it.signed) return '';
+  if (/^подпис/i.test(s)) return 'подписана' + s.replace(/^подписана/i, '').replace(/^,\s*/, ', ');
+  return (s ? (/^\s*№/.test(s) ? s : '№ ' + s) : 'подписана') + (it.signed ? ' от ' + ru_(it.signed) : '');
+}
+
+/** Одна спецификация в плане: две короткие строки */
 function line_(it) {
-  const win = it.from && it.to && it.from !== it.to ? ddmm_(it.from) + '–' + ddmm_(it.to) : ddmm_(it.to || it.from || '');
-  return '• <b>' + esc_(it.client) + '</b> — ' + esc_(it.product) + (it.qty ? ', ' + kg_(it.qty) : '') +
-    (win ? ' · срок ' + win : '') + (it.supplier ? ' · ' + esc_(it.supplier) : '') + (it.ourSpec ? ' · ' + esc_(it.ourSpec) : '');
+  return '▫️ <b>' + esc_(it.client) + '</b>' + (it.qty ? ' — ' + kg_(it.qty) : '') + '\n' +
+    '      ' + esc_(it.product) + ' · ' + winShort_(it.from, it.to);
 }
 
 function notifyNew_(it) {
   const chats = chatsFor_(it.mgr);
   if (!chats.length) return;
-  const t = ['📝 <b>Новая спецификация</b> · ' + esc_(it.mgr),
-    'Клиент: <b>' + esc_(it.client) + '</b>',
-    'Товар: ' + esc_(it.product) + (it.qty ? ', ' + kg_(it.qty) : ''),
-    it.supplier || it.supSpec ? 'Поставщик: ' + esc_(it.supplier) + (it.supSpec ? ', спец. № ' + esc_(it.supSpec) : '') : '',
-    it.ourSpec || it.signed ? 'Спецификация: ' + (it.ourSpec ? (/^\s*(№|подпис)/.test(it.ourSpec) ? '' : '№ ') + esc_(it.ourSpec) : '') + (it.signed ? ' от ' + ru_(it.signed) : '') : '',
-    it.note && it.id === 'x' ? '' : '',
-    '🚚 Отгрузить: ' + (it.from && it.to && it.from !== it.to ? ru_(it.from) + ' – ' + ru_(it.to) : ru_(it.to || it.from)),
-    it.note ? 'Примечание: ' + esc_(it.note) : '',
-    it.fileUrl ? '<a href="' + esc_(it.fileUrl) + '">Файл спецификации</a>' : ''
-  ].filter(Boolean).join('\n');
+  const days = daysText_(it);
+  const t = [
+    '📝 <b>Новая спецификация</b>',
+    '👤 ' + esc_(it.mgr),
+    '',
+    '🏢 <b>' + esc_(it.client) + '</b>',
+    '📦 ' + esc_(it.product) + (it.qty ? '\n⚖️ <b>' + kg_(it.qty) + '</b>' : ''),
+    '',
+    '🚚 Отгрузка: <b>' + winText_(it.from, it.to, true) + '</b>' + (days ? '\n      ' + days : ''),
+    '',
+    specText_(it) ? '📄 Спецификация ' + esc_(specText_(it)) : '',
+    it.supplier ? '🏭 Поставщик: ' + esc_(it.supplier) + (it.supSpec ? ', спец. № ' + esc_(it.supSpec) : '') : '',
+    it.note ? '💬 ' + esc_(it.note) : '',
+    '',
+    (it.fileUrl ? '<a href="' + esc_(it.fileUrl) + '">📎 Файл</a>   ' : '') + '<a href="' + SITE + '">Все спецификации →</a>'
+  ].filter((x, i, a) => x !== '' || (a[i - 1] !== '' && a[i - 1] !== undefined)).join('\n').replace(/\n{3,}/g, '\n\n').trim();
   chats.forEach(c => send_(c, t));
 }
 
@@ -410,22 +454,29 @@ function digest_(mgr) {
     .sort((a, b) => String(a.to || a.from).localeCompare(String(b.to || b.from)));
   const g = { overdue: [], week: [], soon: [], later: [] };
   mine.forEach(x => g[bucket_(x, today)].push(x));
-  const L = ['📋 <b>' + esc_(mgr) + ', план на неделю ' + ddmm_(ws) + '–' + ddmm_(we) + '</b>'];
-  if (g.overdue.length) L.push('', '⚠️ <b>Срок прошёл, а отгрузки нет (' + g.overdue.length + ')</b>', ...g.overdue.map(line_));
-  L.push('', '🚚 <b>Отгрузить на этой неделе (' + g.week.length + ')</b>', ...(g.week.length ? g.week.map(line_) : ['— нет']));
-  if (g.soon.length) L.push('', '🗓 <b>Следующие 2 недели (' + g.soon.length + ')</b>', ...g.soon.map(line_));
-  if (g.later.length) L.push('', '⏳ <b>Позже (' + g.later.length + ')</b>', ...g.later.map(line_));
+  const kgSum = L0 => { const n = L0.reduce((a, x) => a + (parseFloat(String(x.qty || x.q || 0).replace(/\s/g, '').replace(',', '.')) || 0), 0); return n ? ' · ' + kg_(n) : ''; };
+  const L = ['📋 <b>' + esc_(mgr) + ', план на неделю</b>', winText_(ws, we, false), ''];
+  const sec = (icon, title, list, empty) => {
+    if (!list.length && !empty) return;
+    L.push(icon + ' <b>' + title + '</b>' + (list.length ? ' (' + list.length + kgSum(list) + ')' : ''));
+    if (!list.length) L.push('      — нет');
+    list.forEach(x => L.push(line_(x)));
+    L.push('');
+  };
+  sec('⚠️', 'Срок прошёл', g.overdue);
+  sec('🚚', 'Отгрузить на этой неделе', g.week, true);
+  sec('🗓', 'Следующие 2 недели', g.soon);
+  sec('⏳', 'Позже', g.later);
   const pref = String(mgr).toLowerCase().slice(0, 3);
   const b = rows.filter(x => !x.done && !x.cx && !x.spec && x.mgr.toLowerCase().slice(0, 3) === pref);
   if (b.length) {
-    L.push('', '📦 <b>В брони по Остаткам без спецификации (' + b.length + ')</b>');
-    b.forEach(x => L.push('• ' + esc_(x.month) + ' · ' + esc_(x.product) + ' — <b>' + esc_(x.client) + '</b>' +
-      (x.q !== '' ? ', ' + kg_(x.q) : '') + (x.res ? ' · ' + esc_(x.res) : '')));
+    L.push('📦 <b>Брони без спецификации</b> (' + b.length + ')');
+    b.forEach(x => L.push('▫️ <b>' + esc_(x.client) + '</b>' + (x.q !== '' ? ' — ' + kg_(x.q) : '') + '\n      ' + esc_(x.product) + ' · ' + esc_(x.month.toLowerCase())));
+    L.push('');
   }
-  L.push('', '<a href="' + SITE + '">Открыть спецификации</a>');
+  L.push('<a href="' + SITE + '">Все спецификации →</a>');
   return L.join('\n');
 }
-
 /** Понедельник 9:00: каждой — свой план, руководителю — оба. */
 function weeklyDigest() {
   const ch = chats_();
