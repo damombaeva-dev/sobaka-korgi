@@ -94,6 +94,7 @@ details.tg summary small{font-weight:500;color:var(--muted)}
 .ost small{display:block;opacity:.85}
 .card .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
 .card.arch{opacity:.85}
+.src{font-size:12px;color:var(--muted);align-self:center;margin-right:auto}
 
 /* таймлайн */
 .tlw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:50px}
@@ -330,10 +331,55 @@ const START={y:2026,m:11};
 function monthOf(name){const m=String(name).trim().toLowerCase().match(/^([а-яё]+)\s+(\d{4})$/);if(!m)return null;const i=MONTHS.indexOf(m[1]);if(i<0)return null;return {y:+m[2],m:i+1}}
 function num(v){if(typeof v==='number')return v;if(v==null)return null;const s=String(v).replace(/\s/g,'').replace(',','.');return /^-?\d+(\.\d+)?$/.test(s)?parseFloat(s):null}
 function txt(v){if(v==null)return'';if(v instanceof Date)return pad(v.getDate())+'.'+pad(v.getMonth()+1)+'.'+v.getFullYear();return String(v).trim()}
+/* номер недели: 49, «нед 49», «49 неделя», «W49», «49/2027» → понедельник этой недели (ISO) */
+function isoMonday(y,w){const j4=new Date(Date.UTC(y,0,4));const m=new Date(j4);m.setUTCDate(4-((j4.getUTCDay()+6)%7)+(w-1)*7);return m.toISOString().slice(0,10)}
+function weekOf(v,yr,mon){
+  let w=null,y=null;
+  if(typeof v==='number'){if(v>=1&&v<=53&&Math.floor(v)===v)w=v}
+  else if(typeof v==='string'){
+    const rg=v.trim().match(/^(?:w|нед\.?|недели|неделя)?\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*(?:нед\.?|недели|неделя|н)?$/i);
+    if(rg&&+rg[1]>=1&&+rg[2]<=53&&+rg[1]<=+rg[2]){const a=weekOf(+rg[1],yr,mon),b=weekOf(+rg[2],yr,mon);return a&&b?{from:a.from,to:b.to}:null}
+    const m=v.trim().match(/^(?:w|нед\.?|неделя)?\s*(\d{1,2})\s*(?:нед\.?|неделя|н)?\s*(?:[\/.]\s*(\d{2,4}))?$/i);if(m&&+m[1]>=1&&+m[1]<=53){w=+m[1];if(m[2]){y=+m[2];if(y<100)y+=2000}}}
+  if(w==null)return null;
+  if(!y){y=yr;const tab=yr+'-'+pad(mon||1)+'-01';if(isoMonday(y,w)<addDays(tab,-60))y++}
+  const a=isoMonday(y,w);return {from:a,to:addDays(a,6)};
+}
+function dIso(v,yr){
+  if(v==null||v==='')return'';
+  if(v instanceof Date)return isoD(new Date(v.getTime()+12*3600e3));
+  if(typeof v==='number'&&v>20000&&v<80000){const d=new Date(Date.UTC(1899,11,30)+v*864e5);return d.toISOString().slice(0,10)}
+  const m=String(v).match(/(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?/);if(!m)return'';
+  let y=m[3]?+m[3]:yr;if(y<100)y+=2000;return y+'-'+pad(+m[2])+'-'+pad(+m[1]);
+}
+/* I = № спецификации, J = отгрузка с, K = отгрузка по. Пометки вроде «НЕ ВЛЕЗАЕТ…» в I спецификацией не считаются */
+/* I = номер недели отгрузки (49, «49-50», «нед 3/2027») или № спецификации; J/K — необязательно: даты или недели «с»/«по» */
+function win(r,yr,mon){
+  const wi=weekOf(r[8],yr,mon),wj=weekOf(r[9],yr,mon),wk=weekOf(r[10],yr,mon);
+  let f=wj?wj.from:dIso(r[9],yr),t=wk?wk.to:dIso(r[10],yr);
+  if(!f&&wk)f=wk.from;if(!t&&wj)t=wj.to;
+  if(!f&&!t&&wi){f=wi.from;t=wi.to}
+  const wtxt=[wi&&!wj&&!wk?r[8]:null,wj?r[9]:null,wk?r[10]:null].filter(x=>x!=null).map(x=>String(x).trim()).join(' – ');
+  return {sFrom:f,sTo:t,sWeek:wtxt?(/нед|w/i.test(wtxt)?wtxt:'нед. '+wtxt):''};
+}
+function specOf(r,yr,mon){const t=txt(r[8]);if(weekOf(r[8],yr,mon))return 'подписана';const w=win(r,yr,mon);if(w.sFrom||w.sTo)return t||'подписана';return /№|спец|^\s*\d+[\s\/-]*(от|$)/i.test(t)?t:''}
+/* строки Остатков с заполненным столбцом I = подписанные спецификации */
+function excelSpecs(){
+  if(!OST)return[];
+  const linked=new Set(ITEMS.map(x=>x.ostKey).filter(Boolean));
+  return OST.filter(b=>b.spec&&!b.cx&&!linked.has(b.key)).map(b=>({id:'x:'+b.key,src:'excel',mgr:b.mgr,client:b.client,product:b.pname,qty:b.q==null?'':String(b.q),
+    supplier:b.sup,ourSpec:b.spec,from:b.sFrom,to:b.sTo||b.sFrom,note:b.terms,ostKey:b.key,week:b.sWeek,status:b.done?'done':'active',doneAt:b.shipD}));
+}
+function allItems(){
+  const byKey=new Map((OST||[]).filter(b=>b.spec).map(b=>[b.key,b]));
+  const own=ITEMS.map(x=>{const b=x.ostKey&&byKey.get(x.ostKey);if(!b)return x;
+    return Object.assign({},x,{ourSpec:b.spec||x.ourSpec,from:b.sFrom||x.from,to:b.sTo||b.sFrom||x.to,status:b.done?'done':x.status,doneAt:b.done?b.shipD:x.doneAt})});
+  return own.concat(excelSpecs());
+}
 function parseSheet(ws,month){
   const out=[];const ref=ws['!ref'];let range;
-  if(ref){const d=XLSX.utils.decode_range(ref);d.s.c=0;d.e.c=Math.min(d.e.c,7);range=d}
-  const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:true,range}).map(r=>r.slice(0,8));
+  if(ref){const d=XLSX.utils.decode_range(ref);d.s.c=0;d.e.c=Math.min(d.e.c,11);range=d}
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:true,range}).map(r=>r.slice(0,12));
+  const mo=monthOf(month)||{y:new Date().getFullYear(),m:1},yr=mo.y,mon=mo.m;
   const isHead=r=>r&&typeof r[0]==='string'&&r[0].trim()&&!num(r[0])&&!r.slice(1,8).some(v=>v!=null&&String(v).trim()!=='');
   const blank=r=>!r||!r.slice(0,8).some(v=>v!=null&&String(v).trim()!=='');
   const nextNonBlank=i=>{for(let j=i+1;j<rows.length;j++)if(!blank(rows[j]))return rows[j];return null};
@@ -349,6 +395,7 @@ function parseSheet(ws,month){
     const shipT=txt(r[4]),res=txt(r[3]);const done=r[4] instanceof Date;const cx=!done&&/отмен/i.test(shipT+' '+res);
     const m=head.match(/^(.*?)(?:\s*\(|\s+-{1,3}\s|\s+\/\/|$)/);
     out.push({month,sup:sup.replace(/\s*\(.*$/,'').trim()||sup,head,pname:(m&&m[1].trim())||head,client,q,res,shipT,done,cx,mgr:txt(r[7]),
+      terms:[txt(r[5]),txt(r[6])].filter(Boolean).join(' · '),spec:specOf(r,yr,mon),...win(r,yr,mon),shipD:done?dIso(r[4],yr):'',
       key:[month,sup,head,client,q==null?'':q].join('|')});
   });
   return out;
@@ -396,14 +443,15 @@ function bucket(it,t){
   if(it.status==='done')return'done';
   const we=addDays(weekStart(t),6),end=it.to||it.from;
   if(end&&end<t)return'overdue';
-  if(!it.from||it.from<=we)return'week';
-  if(it.from<=addDays(we,14))return'soon';
+  const sd=it.from||it.to;
+  if(!sd||sd<=we)return'week';
+  if(sd<=addDays(we,14))return'soon';
   return'later';
 }
 const COLS=[{k:'overdue',t:'Срок прошёл'},{k:'week',t:'Эта неделя'},{k:'soon',t:'Следующие 2 недели'},{k:'later',t:'Позже'}];
 function filtered(){
   const q=st.q.trim().toLowerCase();
-  return ITEMS.filter(it=>(!st.mgr||mgrOf(it.mgr)===mgrOf(st.mgr))&&
+  return allItems().filter(it=>(!st.mgr||mgrOf(it.mgr)===mgrOf(st.mgr))&&
     (!q||[it.client,it.product,it.supplier,it.supSpec,it.ourSpec,it.note,it.mgr].join(' ').toLowerCase().includes(q)));
 }
 function dueHtml(it,t){
@@ -421,14 +469,15 @@ function cardHtml(it,t){
     '<div class="r1"><span class="mgr '+mcls(it.mgr)+'">'+esc(it.mgr)+'</span>'+dueHtml(it,t)+'</div>'+
     '<div class="cl">'+esc(it.client)+'</div>'+
     '<div class="pr">'+esc(it.product)+(it.qty?' · <b>'+esc(kg(it.qty))+'</b>':'')+'</div>'+
-    '<div class="kv">Отгрузка: <span>'+esc(win)+'</span></div>'+
+    '<div class="kv">Отгрузка: <span>'+(it.week?'<b>'+esc(it.week)+'</b> · '+esc(it.from&&it.to?ddmm(it.from)+'–'+ddmm(it.to):win):esc(win))+'</span></div>'+
     (it.supplier||it.supSpec?'<div class="kv">Поставщик: <span>'+esc(it.supplier||'—')+(it.supSpec?', спец. № '+esc(it.supSpec):'')+'</span></div>':'')+
-    (it.ourSpec||it.signed?'<div class="kv">Наша спец.: <span>'+(it.ourSpec?'№ '+esc(it.ourSpec):'')+(it.signed?' от '+esc(ru(it.signed)):'')+'</span></div>':'')+
+    ((it.ourSpec&&it.ourSpec!=='подписана')||it.signed?'<div class="kv">'+(it.src==='excel'?'Спецификация':'Наша спец.')+': <span>'+(it.ourSpec?(/^\s*(№|подпис)/.test(it.ourSpec)?'':'№ ')+esc(it.ourSpec):'')+(it.signed?' от '+esc(ru(it.signed)):'')+'</span></div>':'')+
     (it.note?'<div class="kv"><span>'+esc(it.note)+'</span></div>':'')+
     ostHtml(it)+
     '<div class="acts">'+
       (it.fileUrl?'<a class="btn sm" href="'+esc(it.fileUrl)+'" target="_blank" rel="noopener">Файл</a>':it.fileName?'<span class="btn sm" title="Файл хранится только после подключения хранилища">'+esc(it.fileName)+'</span>':'')+
-      (arch?'<button type="button" class="btn sm" data-a="restore">Вернуть</button><button type="button" class="btn sm" data-a="remove">Удалить насовсем</button>'
+      (it.src==='excel'?'<span class="src">из Остатков</span><button type="button" class="btn sm" data-a="attach" title="Прикрепить файл спецификации">+ Файл</button>':
+       arch?'<button type="button" class="btn sm" data-a="restore">Вернуть</button><button type="button" class="btn sm" data-a="remove">Удалить насовсем</button>'
            :'<button type="button" class="btn sm" data-a="done">✓ Отгружено</button><button type="button" class="btn sm" data-a="edit">Изменить</button>')+
     '</div></article>';
 }
@@ -519,7 +568,7 @@ function render(){
 function setStatus(c,t){const s=$('status');s.className='status '+c;s.innerHTML='<i></i><span>'+esc(t)+'</span>'}
 function drawStatus(){
   const tm=d=>d?d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}):'—';
-  const act=ITEMS.filter(x=>x.status!=='done').length;
+  const act=allItems().filter(x=>x.status!=='done').length;
   setStatus(specAt?'ok':'err','Активных спецификаций: '+act+' · обновлено '+tm(specAt)+' · Остатки: '+(OST?'загружены '+tm(ostAt):'не загрузились, привязка не показана'));
 }
 
@@ -562,6 +611,14 @@ function openForm(it){
   fillOst(it?it.ostKey:'');setFile(null);
   $('dlg').showModal();
 }
+function openAttach(it){
+  openForm(null);
+  $('dlgT').textContent='Файл к спецификации из Остатков';
+  $('fMgr').value=(mgrOf(it.mgr)||MGRS[0]).name;fillOst(it.ostKey);
+  ['client','product','qty','supplier','ourSpec','from','to','note'].forEach(k=>{const el=$('f'+k[0].toUpperCase()+k.slice(1));if(el)el.value=it[k]||''});
+  $('fSigned').value='';
+  say('Сроки и условия по-прежнему берутся из таблицы Остатков. Здесь можно приложить файл и номер спецификации поставщика.','ok');
+}
 $('fMgr').addEventListener('change',()=>fillOst(''));
 $('fOst').addEventListener('change',()=>{
   const b=(OST||[]).find(x=>x.key===$('fOst').value);if(!b)return;
@@ -597,11 +654,12 @@ $('frm').addEventListener('submit',async e=>{
 /* ---------- действия ---------- */
 document.addEventListener('click',e=>{
   const bar=e.target.closest('.bar[data-id]');
-  if(bar){const it=ITEMS.find(x=>x.id===bar.dataset.id);if(it)openForm(it);return}
+  if(bar){const it=allItems().find(x=>x.id===bar.dataset.id);if(it)it.src==='excel'?openAttach(it):openForm(it);return}
   const b=e.target.closest('.card [data-a]');if(!b)return;
-  const it=ITEMS.find(x=>x.id===b.closest('.card').dataset.id);if(!it)return;
+  const it=allItems().find(x=>x.id===b.closest('.card').dataset.id);if(!it)return;
   const a=b.dataset.a,nm='«'+it.client+' — '+it.product+'»';
-  if(a==='edit')openForm(it);
+  if(a==='attach')openAttach(it);
+  else if(a==='edit')openForm(it);
   else if(a==='done'){if(confirm('Отметить '+nm+' как отгруженную? Она уйдёт во вкладку «Отгружено».'))act({action:'done',id:it.id},'Перенесено в «Отгружено»')}
   else if(a==='restore')act({action:'restore',id:it.id},'Спецификация возвращена');
   else if(a==='remove'){if(confirm('Удалить '+nm+' насовсем вместе с файлом?'))act({action:'remove',id:it.id},'Удалено')}
