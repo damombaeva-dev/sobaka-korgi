@@ -213,6 +213,12 @@ textarea.i{min-height:60px;resize:vertical}
       <button type="button" class="seg" data-s="weeks" aria-pressed="true">Недели · 3 мес.</button>
       <button type="button" class="seg" data-s="months" aria-pressed="false">Месяцы · год</button>
       <button type="button" class="seg" data-s="all" aria-pressed="false">Весь период</button>
+    </div>
+    <span class="muted" style="font-size:13px">Группировать:</span>
+    <div class="segs" id="groups" role="group" aria-label="Группировка">
+      <button type="button" class="seg" data-g="mgr" aria-pressed="true">Менеджер</button>
+      <button type="button" class="seg" data-g="cat" aria-pressed="false">Категория</button>
+      <button type="button" class="seg" data-g="client" aria-pressed="false">Клиент</button>
     </div></div>
     <div class="msum" id="msum"></div>
     <div class="tlw"><div class="tl" id="tl"></div></div>
@@ -286,6 +292,7 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 let ITEMS=[],BOT='',LINKED={},OST=null,ostAt=null,specAt=null,BUSY=false,EDIT=null,FILE=null;
 const st={mgr:LS.get('spec_mgr')||'',view:LS.get('spec_view')||'board',q:'',scale:LS.get('spec_scale')||'weeks'};
 if(!['weeks','months','all'].includes(st.scale))st.scale='weeks';
+st.group=LS.get('spec_group')||'mgr';if(!['mgr','cat','client'].includes(st.group))st.group='mgr';
 if(!['board','timeline','archive'].includes(st.view))st.view='board';
 
 /* ---------- хранилище ---------- */
@@ -471,6 +478,12 @@ function dueHtml(it,t){
   return '<span class="due'+(d<=3?' soon':'')+'">'+(d===0?'сегодня':'осталось '+d+' дн.')+'</span>';
 }
 /* полное название товара: строка-заголовок из Остатков целиком, иначе товар + спец. поставщика */
+/* категория товара по названию */
+const CATS=[[/какао[\s-]*порош|cocoa\s*powder/i,'Какао-порошок'],[/какао[\s-]*масл|cocoa\s*butter/i,'Какао-масло'],[/кокос|coconut/i,'Кокосовое масло'],
+  [/шортен|shorten/i,'Шортенинг'],[/вегамелт|cbs|cbe|cbr|заменит|эквивал|жир/i,'Жиры'],[/пальм|palm|olein|олеин|стеарин/i,'Пальмовое масло'],
+  [/pvo|подсолн|рапс|соев|растит/i,'Растительные масла'],[/молок|milk|сыворот/i,'Молочные продукты'],[/шокол|глазур|choc/i,'Шоколад и глазурь']];
+function catOf(it){const t=(it.head||'')+' '+(it.product||'');for(const [re,n] of CATS)if(re.test(t))return n;const w=String(it.product||'').trim().split(/\s+/)[0]||'Прочее';return w[0].toUpperCase()+w.slice(1)}
+const clientOf=it=>String(it.client||'—').replace(/^\s*(ооо|ао|зао|оао|пао|ип)\s+/i,'').replace(/[«»"]/g,'').trim();
 function fullProd(it){
   if(it.head)return it.head;
   return [it.product,it.qty?'объем '+kg(it.qty):'',it.supSpec?'спец. '+it.supSpec:''].filter(Boolean).join(' - ');
@@ -532,6 +545,7 @@ function renderSummary(act,t){
 function renderTimeline(L,t){
   const act=L.filter(x=>x.status!=='done'&&(x.to||x.from)).sort((x,y)=>String(x.from||x.to).localeCompare(String(y.from||y.to)));
   document.querySelectorAll('#scales .seg').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===st.scale));
+  document.querySelectorAll('#groups .seg').forEach(b=>b.setAttribute('aria-pressed',b.dataset.g===st.group));
   renderSummary(act,t);
   let ticks=[],labels=[],start,end,curTick;
   if(st.scale==='weeks'){
@@ -552,11 +566,15 @@ function renderTimeline(L,t){
   let h='<div class="tlh"><div class="lab">Клиент · товар</div><div class="weeks" style="grid-template-columns:'+ticks.map((d,i)=>((i<ticks.length-1?tl[i+1]:100)-tl[i]).toFixed(3)+'fr').join(' ')+'">'+
     ticks.map((d,i)=>'<div class="'+(d===curTick?'now':'')+'" data-tick="'+d.slice(0,7)+'">'+labels[i]+'</div>').join('')+'</div></div>';
   if(!act.length)h+='<div class="empty-col" style="padding:30px">Нет спецификаций со сроками отгрузки</div>';
-  const groups=st.mgr?[{name:st.mgr,list:act}]:MGRS.map(m=>({name:m.name,list:act.filter(x=>mgrOf(x.mgr)===m)})).concat([{name:'Другие',list:act.filter(x=>!mgrOf(x.mgr))}]);
+  let groups;
+  if(st.group==='mgr')groups=st.mgr?[{name:st.mgr,list:act}]:MGRS.map(m=>({name:m.name,list:act.filter(x=>mgrOf(x.mgr)===m)})).concat([{name:'Другие',list:act.filter(x=>!mgrOf(x.mgr))}]);
+  else{const f=st.group==='cat'?catOf:clientOf;const mp=new Map();act.forEach(x=>{const k=f(x);if(!mp.has(k))mp.set(k,[]);mp.get(k).push(x)});
+    groups=[...mp.entries()].map(([name,list])=>({name,list})).sort((a,b)=>st.group==='cat'?a.name.localeCompare(b.name,'ru'):String(a.list[0].from||a.list[0].to).localeCompare(String(b.list[0].from||b.list[0].to))||a.name.localeCompare(b.name,'ru'))}
+  const showHead=!(st.group==='mgr'&&st.mgr);
   const lines=tl.map(l=>'<span class="grid-l" style="left:'+l+'%"></span>').join('')+(t>=start&&t<end?'<span class="today" style="left:'+pos(t)+'%" title="Сегодня"></span>':'');
   groups.forEach(g=>{
     if(!g.list.length)return;
-    if(!st.mgr)h+='<div class="tlgrp">'+esc(g.name)+' · '+g.list.length+'</div>';
+    if(showHead)h+='<div class="tlgrp">'+esc(g.name)+' · '+g.list.length+(sumKg(g.list)?' · '+sumKg(g.list):'')+'</div>';
     g.list.forEach(x=>{
       const f=x.from||x.to,e=x.to||x.from;
       const before=addDays(e,1)<=start,after=f>=end;
@@ -682,6 +700,7 @@ $('addBtn').onclick=()=>openForm(null);
 $('mgrs').addEventListener('click',e=>{const b=e.target.closest('.seg');if(!b)return;st.mgr=b.dataset.m;LS.set('spec_mgr',st.mgr);render()});
 $('views').addEventListener('click',e=>{const b=e.target.closest('.seg');if(!b)return;st.view=b.dataset.v;LS.set('spec_view',st.view);render()});
 $('q').addEventListener('input',e=>{st.q=e.target.value;render()});
+$('groups').addEventListener('click',e=>{const b=e.target.closest('.seg');if(!b)return;st.group=b.dataset.g;LS.set('spec_group',st.group);render()});
 $('scales').addEventListener('click',e=>{const b=e.target.closest('.seg');if(!b)return;st.scale=b.dataset.s;LS.set('spec_scale',st.scale);render()});
 $('msum').addEventListener('click',e=>{const tr=e.target.closest('tr[data-m]');if(!tr)return;const ym=tr.dataset.m;
   const t=today();if(st.scale==='weeks'&&(ym<addDays(weekStart(t),-7).slice(0,7)||ym>=addDays(weekStart(t),91).slice(0,7))){st.scale='months';render()}
