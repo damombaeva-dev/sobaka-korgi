@@ -208,7 +208,12 @@ function tg_(method, payload) {
   try { return JSON.parse(r.getContentText()); } catch (e) { return null; }
 }
 
-function send_(chat, text) {
+function send_(chat, text, buttons) {
+  if (buttons && text.length < 3800) {
+    tg_('sendMessage', { chat_id: chat, text: text, parse_mode: 'HTML', disable_web_page_preview: true,
+      reply_markup: { inline_keyboard: [buttons.map(b => ({ text: b[0], url: b[1] }))] } });
+    return;
+  }
   const lines = String(text).split('\n');
   let buf = '';
   lines.forEach(l => {
@@ -252,7 +257,7 @@ function pollTelegram() {
       const keys = Object.keys(ch).filter(k => (ch[k] || []).indexOf(id) >= 0);
       if (!keys.length) send_(id, 'Этот чат ещё не подключён. Откройте ссылку «Подключить Telegram» на ' + SITE);
       p.setProperty('CHATS', JSON.stringify(ch));
-      keys.forEach(k => (k === ALL ? Object.keys(MANAGERS) : [k]).forEach(mk => send_(id, digest_(MANAGERS[mk]))));
+      keys.forEach(k => (k === ALL ? Object.keys(MANAGERS) : [k]).forEach(mk => send_(id, digest_(MANAGERS[mk]), [['Все спецификации', SITE]])));
     } else {
       send_(id, 'Команды: /week — план на неделю, /stop — отключить напоминания.\nСпецификации: ' + SITE);
     }
@@ -313,11 +318,13 @@ function notifyNew_(it) {
     it.supplier ? esc_(it.supplier) + (it.supSpec ? ' (спец. ' + esc_(it.supSpec) + ')' : '') : '', it.note ? esc_(it.note) : '']
     .filter(Boolean).join(' · ');
   const t = '📝 <b>' + esc_(it.product) + (it.qty ? ' — ' + kg_(it.qty) : '') + '</b>\n' +
-    '🚚 <b>' + winText_(it.from, it.to, false) + '</b>' + (days ? ' · ' + days : '') + '\n' +
-    '🏢 <b>' + esc_(it.client) + '</b>\n' +
-    '<i>' + small + '</i>' +
-    (it.fileUrl ? '\n<a href="' + esc_(it.fileUrl) + '">файл</a> · ' : '\n') + '<a href="' + SITE + '">все спецификации</a>';
-  chats.forEach(c => send_(c, t));
+    '🚚 <b>' + winText_(it.from, it.to, false) + '</b>' + (days ? '  <i>' + days + '</i>' : '') + '\n' +
+    '🏢 <b>' + esc_(it.client) + '</b>' +
+    (small ? '\n<blockquote expandable>' + small.split(' · ').join('\n') + '</blockquote>' : '');
+  const btn = [];
+  if (it.fileUrl) btn.push(['📎 Файл', it.fileUrl]);
+  btn.push(['Все спецификации', SITE]);
+  chats.forEach(c => send_(c, t, btn));
 }
 
 function testMessage_(mgr) {
@@ -467,15 +474,14 @@ function digest_(mgr) {
     b.forEach(x => L.push('▫️ <b>' + esc_(x.product) + (x.q !== '' ? ', ' + kg_(x.q) : '') + '</b> · ' + esc_(x.month.toLowerCase()) + ' · ' + esc_(x.client)));
     L.push('');
   }
-  L.push('<a href="' + SITE + '">все спецификации</a>');
-  return L.join('\n');
+  return L.join('\n').trim();
 }
 /** Понедельник 9:00: каждой — свой план, руководителю — оба. */
 function weeklyDigest() {
   const ch = chats_();
   Object.keys(MANAGERS).forEach(k => {
     const text = digest_(MANAGERS[k]);
-    (ch[k] || []).forEach(c => send_(c, text));
-    (ch[ALL] || []).forEach(c => { if ((ch[k] || []).indexOf(c) < 0) send_(c, text); });
+    (ch[k] || []).forEach(c => send_(c, text, [['Все спецификации', SITE]]));
+    (ch[ALL] || []).forEach(c => { if ((ch[k] || []).indexOf(c) < 0) send_(c, text, [['Все спецификации', SITE]]); });
   });
 }
