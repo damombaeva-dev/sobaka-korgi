@@ -497,7 +497,7 @@ $('copyMail').onclick=async()=>{
   say(ok?'Письмо скопировано — вставьте его (Ctrl+V) в новое письмо':'Не удалось скопировать — используйте «Скачать .html»',ok?'ok':'bad');
 };
 /* ---------- шаблоны (общие, в Google Таблице) ---------- */
-const API_URL='';  /* URL веб-приложения Apps Script (…/exec); пусто — шаблоны только в этом браузере */
+const API_URL='https://script.google.com/macros/s/AKfycbyxzB4_sv3zLZPqhBYhik4Na9UifKbcE1RFUo-hHJjsT_-Nra67xBGdxb7RyFdQh8-8SQ/exec';  /* URL веб-приложения Apps Script (…/exec); пусто — шаблоны только в этом браузере */
 let SAVES=[],CUR=LS.get('pismo_cur'),BUSY=false;
 function sayS(t,kind){const m=$('svMsg');m.textContent=t;m.className='msg '+kind}
 const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -528,7 +528,8 @@ async function run(fn,okText){
 async function refresh(){
   setList(cached());
   if(!API_URL)return;
-  try{const j=await api(null);setList(j.items)}catch(e){sayS('Не удалось обновить список шаблонов — показан последний сохранённый','bad')}
+  sayS('Загружаю общие шаблоны…','ok');
+  try{const j=await api(null);setList(j.items);$('svMsg').className='msg'}catch(e){sayS('Не удалось обновить список шаблонов — показан последний сохранённый','bad')}
 }
 function drawSaves(){
   $('svMode').textContent=API_URL?'(общие для всех)':'(в этом браузере)';
