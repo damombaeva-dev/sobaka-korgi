@@ -314,6 +314,8 @@ function weekOf_(v, yr, mon) {
   const a = isoMonday_(y, w);
   return { from: a, to: addDays_(a, 6) };
 }
+function monthNum_(v) { if (typeof v === 'number') return v >= 1 && v <= 12 && Math.floor(v) === v ? v : 0; const m = String(v === null || v === undefined ? '' : v).trim().match(/^(\d{1,2})(?:\s*мес\.?)?$/i); return m && +m[1] >= 1 && +m[1] <= 12 ? +m[1] : 0; }
+function addMonthsG_(s, n) { const p = s.split('-').map(Number); return new Date(Date.UTC(p[0], p[1] - 1 + n, 1)).toISOString().slice(0, 10); }
 function cellTxt_(v) { return v instanceof Date ? Utilities.formatDate(v, TZ, 'dd.MM.yyyy') : String(v === null || v === undefined ? '' : v).trim(); }
 
 /** Все строки броней из Остатков (вкладки «Месяц ГГГГ» от ноября 2026). Ключ строки совпадает с ключом на сайте. */
@@ -350,14 +352,21 @@ function ostatkiRows_() {
       const ship = r[4], res = r[3];
       const done = ship instanceof Date, cx = !done && /отмен/i.test(cellTxt_(ship) + ' ' + cellTxt_(res));
       const pm = head.match(/^(.*?)(?:\s*\(|\s+-{1,3}\s|\s+\/\/|$)/);
-      const wj = weekOf_(r[9], yr, mi + 1), wk = weekOf_(r[10], yr, mi + 1);
-      let sFrom = wj ? wj.from : dIso_(r[9], yr), sTo = wk ? wk.to : dIso_(r[10], yr);
-      if (!sFrom && wk) sFrom = wk.from;
-      if (!sTo && wj) sTo = wj.to;
-      const wi = weekOf_(r[8], yr, mi + 1);
-      if (!sFrom && !sTo && wi) { sFrom = wi.from; sTo = wi.to; }
-      const it8 = wi ? 'подписана, нед. ' + cellTxt_(r[8]) : cellTxt_(r[8]);
-      const spec = (sFrom || sTo) ? (it8 || 'подписана') : (/№|спец|^\s*\d+[\s\/-]*(от|$)/i.test(it8) ? it8 : '');
+      /* I = месяц отгрузки цифрой 1–12 (= спецификация подписана); J = номер недели или дата, если срок точнее */
+      const mo = monthNum_(r[8]);
+      let sFrom = '', sTo = '', spec = '';
+      if (mo) {
+        let y = yr; if (mo < mi + 1 - 2) y++;
+        const ms = y + '-' + ('0' + mo).slice(-2) + '-01';
+        const me = addDays_(addMonthsG_(ms, 1), -1);
+        const wj = weekOf_(r[9], y, mo), dj = dIso_(r[9], y);
+        if (wj) {
+          sFrom = wj.from; sTo = wj.to;
+          if (sFrom > addDays_(me, 40)) { const a = isoMonday_(y - 1, +String(r[9]).match(/\d+/)[0]); sFrom = a; sTo = addDays_(a, 6); }
+          spec = 'подписана, нед. ' + cellTxt_(r[9]).replace(/^\D+/, '');
+        } else if (dj) { sFrom = sTo = dj; spec = 'подписана'; }
+        else { sFrom = ms; sTo = me; spec = 'подписана, ' + MONTHS[mo - 1] + ' ' + y; }
+      }
       out.push({ month: month, sup: sup.replace(/\s*\(.*$/, '').trim() || sup, product: (pm && pm[1].trim()) || head, client: client, q: qn === null ? '' : qn,
         res: res instanceof Date ? Utilities.formatDate(res, TZ, 'dd.MM') : String(res || '').trim(),
         terms: [cellTxt_(r[5]), cellTxt_(r[6])].filter(Boolean).join(' · '), mgr: cellTxt_(r[7]), done: done, cx: cx,

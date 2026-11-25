@@ -352,22 +352,25 @@ function dIso(v,yr){
   let y=m[3]?+m[3]:yr;if(y<100)y+=2000;return y+'-'+pad(+m[2])+'-'+pad(+m[1]);
 }
 /* I = № спецификации, J = отгрузка с, K = отгрузка по. Пометки вроде «НЕ ВЛЕЗАЕТ…» в I спецификацией не считаются */
-/* I = номер недели отгрузки (49, «49-50», «нед 3/2027») или № спецификации; J/K — необязательно: даты или недели «с»/«по» */
+/* I = месяц отгрузки цифрой 1–12 (заполнен = спецификация подписана); J = номер недели, если срок точнее (можно дату) */
+function monthNum(v){if(typeof v==='number')return v>=1&&v<=12&&Math.floor(v)===v?v:0;const m=String(v==null?'':v).trim().match(/^(\d{1,2})(?:\s*мес\.?)?$/i);return m&&+m[1]>=1&&+m[1]<=12?+m[1]:0}
 function win(r,yr,mon){
-  const wi=weekOf(r[8],yr,mon),wj=weekOf(r[9],yr,mon),wk=weekOf(r[10],yr,mon);
-  let f=wj?wj.from:dIso(r[9],yr),t=wk?wk.to:dIso(r[10],yr);
-  if(!f&&wk)f=wk.from;if(!t&&wj)t=wj.to;
-  if(!f&&!t&&wi){f=wi.from;t=wi.to}
-  const wtxt=[wi&&!wj&&!wk?r[8]:null,wj?r[9]:null,wk?r[10]:null].filter(x=>x!=null).map(x=>String(x).trim()).join(' – ');
-  return {sFrom:f,sTo:t,sWeek:wtxt?(/нед|w/i.test(wtxt)?wtxt:'нед. '+wtxt):''};
+  const mi=monthNum(r[8]);if(!mi)return {sFrom:'',sTo:'',sWeek:'',mLab:''};
+  let y=yr;if(mi<mon-2)y++;
+  const ms=y+'-'+pad(mi)+'-01',me=addDays(addMonths(ms,1),-1);
+  const wj=weekOf(r[9],y,mi);
+  if(wj){let f=wj.from,t=wj.to;if(f>addDays(me,40)){const a=isoMonday(y-1,+String(r[9]).match(/\d+/)[0]);f=a;t=addDays(a,6)}
+    return {sFrom:f,sTo:t,sWeek:'нед. '+String(r[9]).trim().replace(/^\D+/,''),mLab:MN[mi-1]}}
+  const dj=dIso(r[9],y);if(dj)return {sFrom:dj,sTo:dj,sWeek:'',mLab:MN[mi-1]};
+  return {sFrom:ms,sTo:me,sWeek:'',mLab:MN[mi-1]+' '+y};
 }
-function specOf(r,yr,mon){const t=txt(r[8]);if(weekOf(r[8],yr,mon))return 'подписана';const w=win(r,yr,mon);if(w.sFrom||w.sTo)return t||'подписана';return /№|спец|^\s*\d+[\s\/-]*(от|$)/i.test(t)?t:''}
+function specOf(r,yr,mon){return monthNum(r[8])?'подписана':''}
 /* строки Остатков с заполненным столбцом I = подписанные спецификации */
 function excelSpecs(){
   if(!OST)return[];
   const linked=new Set(ITEMS.map(x=>x.ostKey).filter(Boolean));
   return OST.filter(b=>b.spec&&!b.cx&&!linked.has(b.key)).map(b=>({id:'x:'+b.key,src:'excel',mgr:b.mgr,client:b.client,product:b.pname,qty:b.q==null?'':String(b.q),
-    supplier:b.sup,ourSpec:b.spec,from:b.sFrom,to:b.sTo||b.sFrom,note:b.terms,ostKey:b.key,week:b.sWeek,status:b.done?'done':'active',doneAt:b.shipD}));
+    supplier:b.sup,ourSpec:b.spec,from:b.sFrom,to:b.sTo||b.sFrom,note:b.terms,ostKey:b.key,week:b.sWeek,mlab:b.mLab,status:b.done?'done':'active',doneAt:b.shipD}));
 }
 function allItems(){
   const byKey=new Map((OST||[]).filter(b=>b.spec).map(b=>[b.key,b]));
@@ -469,7 +472,7 @@ function cardHtml(it,t){
     '<div class="r1"><span class="mgr '+mcls(it.mgr)+'">'+esc(it.mgr)+'</span>'+dueHtml(it,t)+'</div>'+
     '<div class="cl">'+esc(it.client)+'</div>'+
     '<div class="pr">'+esc(it.product)+(it.qty?' · <b>'+esc(kg(it.qty))+'</b>':'')+'</div>'+
-    '<div class="kv">Отгрузка: <span>'+(it.week?'<b>'+esc(it.week)+'</b> · '+esc(it.from&&it.to?ddmm(it.from)+'–'+ddmm(it.to):win):esc(win))+'</span></div>'+
+    '<div class="kv">Отгрузка: <span>'+(it.week?'<b>'+esc(it.week)+'</b> · '+esc(ddmm(it.from)+'–'+ddmm(it.to)):it.mlab&&!/\d{2}\./.test(it.mlab)?'<b>'+esc(it.mlab)+'</b>':esc(win))+'</span></div>'+
     (it.supplier||it.supSpec?'<div class="kv">Поставщик: <span>'+esc(it.supplier||'—')+(it.supSpec?', спец. № '+esc(it.supSpec):'')+'</span></div>':'')+
     ((it.ourSpec&&it.ourSpec!=='подписана')||it.signed?'<div class="kv">'+(it.src==='excel'?'Спецификация':'Наша спец.')+': <span>'+(it.ourSpec?(/^\s*(№|подпис)/.test(it.ourSpec)?'':'№ ')+esc(it.ourSpec):'')+(it.signed?' от '+esc(ru(it.signed)):'')+'</span></div>':'')+
     (it.note?'<div class="kv"><span>'+esc(it.note)+'</span></div>':'')+
