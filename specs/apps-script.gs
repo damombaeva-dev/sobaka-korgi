@@ -299,31 +299,24 @@ function specText_(it) {
   return (s ? (/^\s*№/.test(s) ? s : '№ ' + s) : 'подписана') + (it.signed ? ' от ' + ru_(it.signed) : '');
 }
 
-/** Одна спецификация в плане: две короткие строки */
+/** Одна спецификация в плане: товар и объём, срок, клиент — одной строкой */
 function line_(it) {
-  return '▫️ <b>' + esc_(it.client) + '</b>' + (it.qty ? ' — ' + kg_(it.qty) : '') + '\n' +
-    '      ' + esc_(it.product) + ' · ' + winShort_(it.from, it.to);
+  return '▫️ <b>' + esc_(it.product) + (it.qty ? ', ' + kg_(it.qty) : '') + '</b> · ' + winShort_(it.from, it.to) + ' · ' + esc_(it.client);
 }
 
+/** Уведомление: крупно товар+объём, срок, клиент; остальное одной строкой курсивом */
 function notifyNew_(it) {
   const chats = chatsFor_(it.mgr);
   if (!chats.length) return;
   const days = daysText_(it);
-  const t = [
-    '📝 <b>Новая спецификация</b>',
-    '👤 ' + esc_(it.mgr),
-    '',
-    '🏢 <b>' + esc_(it.client) + '</b>',
-    '📦 ' + esc_(it.product) + (it.qty ? '\n⚖️ <b>' + kg_(it.qty) + '</b>' : ''),
-    '',
-    '🚚 Отгрузка: <b>' + winText_(it.from, it.to, true) + '</b>' + (days ? '\n      ' + days : ''),
-    '',
-    specText_(it) ? '📄 Спецификация ' + esc_(specText_(it)) : '',
-    it.supplier ? '🏭 Поставщик: ' + esc_(it.supplier) + (it.supSpec ? ', спец. № ' + esc_(it.supSpec) : '') : '',
-    it.note ? '💬 ' + esc_(it.note) : '',
-    '',
-    (it.fileUrl ? '<a href="' + esc_(it.fileUrl) + '">📎 Файл</a>   ' : '') + '<a href="' + SITE + '">Все спецификации →</a>'
-  ].filter((x, i, a) => x !== '' || (a[i - 1] !== '' && a[i - 1] !== undefined)).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const small = [esc_(it.mgr), specText_(it) ? 'спец. ' + esc_(specText_(it)) : '',
+    it.supplier ? esc_(it.supplier) + (it.supSpec ? ' (спец. ' + esc_(it.supSpec) + ')' : '') : '', it.note ? esc_(it.note) : '']
+    .filter(Boolean).join(' · ');
+  const t = '📝 <b>' + esc_(it.product) + (it.qty ? ' — ' + kg_(it.qty) : '') + '</b>\n' +
+    '🚚 <b>' + winText_(it.from, it.to, false) + '</b>' + (days ? ' · ' + days : '') + '\n' +
+    '🏢 <b>' + esc_(it.client) + '</b>\n' +
+    '<i>' + small + '</i>' +
+    (it.fileUrl ? '\n<a href="' + esc_(it.fileUrl) + '">файл</a> · ' : '\n') + '<a href="' + SITE + '">все спецификации</a>';
   chats.forEach(c => send_(c, t));
 }
 
@@ -459,7 +452,7 @@ function digest_(mgr) {
   const sec = (icon, title, list, empty) => {
     if (!list.length && !empty) return;
     L.push(icon + ' <b>' + title + '</b>' + (list.length ? ' (' + list.length + kgSum(list) + ')' : ''));
-    if (!list.length) L.push('      — нет');
+    if (!list.length) L.push('<i>нет</i>');
     list.forEach(x => L.push(line_(x)));
     L.push('');
   };
@@ -471,10 +464,10 @@ function digest_(mgr) {
   const b = rows.filter(x => !x.done && !x.cx && !x.spec && x.mgr.toLowerCase().slice(0, 3) === pref);
   if (b.length) {
     L.push('📦 <b>Брони без спецификации</b> (' + b.length + ')');
-    b.forEach(x => L.push('▫️ <b>' + esc_(x.client) + '</b>' + (x.q !== '' ? ' — ' + kg_(x.q) : '') + '\n      ' + esc_(x.product) + ' · ' + esc_(x.month.toLowerCase())));
+    b.forEach(x => L.push('▫️ <b>' + esc_(x.product) + (x.q !== '' ? ', ' + kg_(x.q) : '') + '</b> · ' + esc_(x.month.toLowerCase()) + ' · ' + esc_(x.client)));
     L.push('');
   }
-  L.push('<a href="' + SITE + '">Все спецификации →</a>');
+  L.push('<a href="' + SITE + '">все спецификации</a>');
   return L.join('\n');
 }
 /** Понедельник 9:00: каждой — свой план, руководителю — оба. */
