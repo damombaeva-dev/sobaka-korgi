@@ -98,8 +98,8 @@ details.tg summary small{font-weight:500;color:var(--muted)}
 
 /* таймлайн */
 .tlw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:50px}
-.tl{min-width:900px;position:relative}
-.tlh,.tlr{display:grid;grid-template-columns:260px 1fr}
+.tl{min-width:1000px;position:relative}
+.tlh,.tlr{display:grid;grid-template-columns:360px 1fr}
 .tlh{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--line);z-index:2}
 .tlh .lab{padding:8px 12px;font-size:12px;color:var(--muted);font-weight:600}
 .weeks{display:grid;position:relative}
@@ -109,7 +109,11 @@ details.tg summary small{font-weight:500;color:var(--muted)}
 .tlr:last-child{border-bottom:0}
 .tlr .lab{padding:7px 12px;font-size:13px;line-height:1.25;border-right:1px solid var(--line);overflow:hidden}
 .tlr .lab b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tlr .lab span{color:var(--muted);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tlr .lab span{display:block}
+.tlr .lab .p1{font-size:12.5px}
+.tlr .lab .p2{color:var(--muted);font-size:11.5px;line-height:1.3;margin-top:1px}
+.tlr .lab em.q{font-style:normal;font-weight:500;color:var(--muted);font-size:12px}
+.card .full{font-size:12px;line-height:1.35;margin:-2px 0 6px}
 .track{position:relative;min-height:44px}
 .grid-l{position:absolute;top:0;bottom:0;border-left:1px solid var(--line)}
 .today{position:absolute;top:0;bottom:0;border-left:2px solid var(--accent);z-index:1}
@@ -370,12 +374,13 @@ function excelSpecs(){
   if(!OST)return[];
   const linked=new Set(ITEMS.map(x=>x.ostKey).filter(Boolean));
   return OST.filter(b=>b.spec&&!b.cx&&!linked.has(b.key)).map(b=>({id:'x:'+b.key,src:'excel',mgr:b.mgr,client:b.client,product:b.pname,qty:b.q==null?'':String(b.q),
-    supplier:b.sup,ourSpec:b.spec,from:b.sFrom,to:b.sTo||b.sFrom,note:b.terms,ostKey:b.key,week:b.sWeek,mlab:b.mLab,status:b.done?'done':'active',doneAt:b.shipD}));
+    supplier:b.sup,ourSpec:b.spec,from:b.sFrom,to:b.sTo||b.sFrom,note:b.terms,ostKey:b.key,week:b.sWeek,mlab:b.mLab,head:b.head,status:b.done?'done':'active',doneAt:b.shipD}));
 }
 function allItems(){
   const byKey=new Map((OST||[]).filter(b=>b.spec).map(b=>[b.key,b]));
-  const own=ITEMS.map(x=>{const b=x.ostKey&&byKey.get(x.ostKey);if(!b)return x;
-    return Object.assign({},x,{ourSpec:b.spec||x.ourSpec,from:b.sFrom||x.from,to:b.sTo||b.sFrom||x.to,status:b.done?'done':x.status,doneAt:b.done?b.shipD:x.doneAt})});
+  const anyKey=new Map((OST||[]).map(b=>[b.key,b]));
+  const own=ITEMS.map(x=>{const b=x.ostKey&&byKey.get(x.ostKey);if(!b){const a=x.ostKey&&anyKey.get(x.ostKey);return a?Object.assign({},x,{head:a.head}):x}
+    return Object.assign({},x,{head:b.head,ourSpec:b.spec||x.ourSpec,from:b.sFrom||x.from,to:b.sTo||b.sFrom||x.to,status:b.done?'done':x.status,doneAt:b.done?b.shipD:x.doneAt})});
   return own.concat(excelSpecs());
 }
 function parseSheet(ws,month){
@@ -465,13 +470,19 @@ function dueHtml(it,t){
   if(it.from&&it.from>t)return '<span class="due">с '+esc(ddmm(it.from))+'</span>';
   return '<span class="due'+(d<=3?' soon':'')+'">'+(d===0?'сегодня':'осталось '+d+' дн.')+'</span>';
 }
+/* полное название товара: строка-заголовок из Остатков целиком, иначе товар + спец. поставщика */
+function fullProd(it){
+  if(it.head)return it.head;
+  return [it.product,it.qty?'объем '+kg(it.qty):'',it.supSpec?'спец. '+it.supSpec:''].filter(Boolean).join(' - ');
+}
 function cardHtml(it,t){
   const win=it.from&&it.to&&it.from!==it.to?ru(it.from)+' – '+ru(it.to):ru(it.to||it.from);
   const arch=it.status==='done';
   return '<article class="card '+mcls(it.mgr)+(arch?' arch':'')+'" data-id="'+esc(it.id)+'">'+
     '<div class="r1"><span class="mgr '+mcls(it.mgr)+'">'+esc(it.mgr)+'</span>'+dueHtml(it,t)+'</div>'+
     '<div class="cl">'+esc(it.client)+'</div>'+
-    '<div class="pr">'+esc(it.product)+(it.qty?' · <b>'+esc(kg(it.qty))+'</b>':'')+'</div>'+
+    '<div class="pr">'+esc(it.product)+(it.supplier?' · '+esc(it.supplier):'')+(it.qty?' · <b>'+esc(kg(it.qty))+'</b>':'')+'</div>'+
+    (it.head&&it.head!==it.product?'<div class="kv full">'+esc(it.head)+'</div>':'')+
     '<div class="kv">Отгрузка: <span>'+(it.week?'<b>'+esc(it.week)+'</b> · '+esc(ddmm(it.from)+'–'+ddmm(it.to)):it.mlab&&!/\d{2}\./.test(it.mlab)?'<b>'+esc(it.mlab)+'</b>':esc(win))+'</span></div>'+
     (it.supplier||it.supSpec?'<div class="kv">Поставщик: <span>'+esc(it.supplier||'—')+(it.supSpec?', спец. № '+esc(it.supSpec):'')+'</span></div>':'')+
     ((it.ourSpec&&it.ourSpec!=='подписана')||it.signed?'<div class="kv">'+(it.src==='excel'?'Спецификация':'Наша спец.')+': <span>'+(it.ourSpec?(/^\s*(№|подпис)/.test(it.ourSpec)?'':'№ ')+esc(it.ourSpec):'')+(it.signed?' от '+esc(ru(it.signed)):'')+'</span></div>':'')+
@@ -555,7 +566,7 @@ function renderTimeline(L,t){
       const lbl=(x.qty?kg(x.qty)+' · ':'')+(f===e?ddmm(e):ddmm(f)+'–'+ddmm(e))+(before?' ←':after?' →':'');
       const narrow=w<14;
       const lx=l+w;
-      h+='<div class="tlr" data-ym="'+e.slice(0,7)+'"><div class="lab"><b>'+esc(x.client)+'</b><span>'+esc(x.product)+(x.supplier?' · '+esc(x.supplier):'')+'</span></div>'+
+      h+='<div class="tlr" data-ym="'+e.slice(0,7)+'"><div class="lab"><b>'+esc(x.client)+' <em class="q">'+esc(x.qty?kg(x.qty):'')+'</em></b><span class="p1">'+esc(x.product)+(x.supplier?' · '+esc(x.supplier):'')+'</span><span class="p2">'+esc(fullProd(x))+'</span></div>'+
         '<div class="track">'+lines+'<div class="'+cls+'" data-id="'+esc(x.id)+'" style="left:'+Math.min(l,100-w)+'%;width:'+Math.min(w,100)+'%" title="'+esc(x.client+' — '+x.product+', '+lbl)+'">'+(narrow?'':esc(lbl))+'</div>'+(narrow?'<span class="blab" style="'+(l+w>75?'right:calc('+(100-Math.min(l,100-w))+'% + 6px)':'left:calc('+lx+'% + 6px)')+'">'+esc(lbl)+'</span>':'')+'</div></div>';
     });
   });
