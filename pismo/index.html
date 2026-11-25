@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Письмо с котировками</title>
+<style>
+[hidden]{display:none!important}
+:root{
+  --bg:#f1f4f0;--surface:#fff;--text:#1f2a24;--muted:#6b7a71;--line:#dfe6e0;--chip:#eef2ee;
+  --accent:#4f7a63;--on-accent:#fff;--ring:rgba(79,122,99,.18);
+  --bad:#b54034;--bad-bg:#fbeeec;--ok:#2f7a4f;--ok-bg:#eaf5ee;
+  --font:Inter,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-pal="sage"]){
+  color-scheme:dark;--bg:#1f2228;--surface:#282c34;--text:#e3e6ec;--muted:#9aa1ad;--line:#363b45;--chip:#30353e;
+  --accent:#d9a46c;--on-accent:#1f2228;--ring:rgba(217,164,108,.2);--bad:#f0968c;--bad-bg:#3b2b2d;--ok:#8fd1a8;--ok-bg:#263a2f}}
+:root[data-pal="dark"]{
+  color-scheme:dark;--bg:#1f2228;--surface:#282c34;--text:#e3e6ec;--muted:#9aa1ad;--line:#363b45;--chip:#30353e;
+  --accent:#d9a46c;--on-accent:#1f2228;--ring:rgba(217,164,108,.2);--bad:#f0968c;--bad-bg:#3b2b2d;--ok:#8fd1a8;--ok-bg:#263a2f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 var(--font);-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+.wrap{max-width:1320px;margin:0 auto;padding:0 16px}
+.top{border-bottom:1px solid var(--line)}
+.bar1{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0 10px}
+.brand{font-weight:700;font-size:18px;margin-right:auto}
+.brand small{display:block;font-weight:500;font-size:12.5px;color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:7px 12px;font-size:14px;text-decoration:none;color:var(--text);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.btn:disabled{opacity:.45;cursor:default}
+.grid{display:grid;grid-template-columns:minmax(300px,420px) minmax(0,1fr);gap:18px;padding:16px 0 60px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:22px 14px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.on{border-color:var(--accent);background:var(--chip)}
+.drop b{display:block;font-size:16px;margin-bottom:4px}
+.drop span{font-size:13px;color:var(--muted)}
+label.f{display:block;font-size:13px;color:var(--muted);margin:8px 0 3px}
+input.i{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:8px 10px}
+input.i:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--ring)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.msg{font-size:13.5px;border-radius:9px;padding:8px 10px;margin-top:10px;display:none}
+.msg.ok{display:block;background:var(--ok-bg);color:var(--ok)}
+.msg.bad{display:block;background:var(--bad-bg);color:var(--bad)}
+.hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+.tblw{overflow-x:auto}
+table.ed{width:100%;border-collapse:collapse;font-size:13px}
+table.ed th{text-align:left;font-weight:600;color:var(--muted);border-bottom:1px solid var(--line);padding:6px 6px;white-space:nowrap}
+table.ed td{border-bottom:1px solid var(--line);padding:2px}
+table.ed td div{padding:5px 6px;border-radius:6px;min-width:60px}
+table.ed td div:focus{outline:none;background:var(--chip)}
+table.ed td.x{width:28px;text-align:center}
+table.ed td.x button{border:0;background:none;color:var(--muted);font-size:16px;padding:2px 6px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.pv{background:#EEF1F3;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.pv iframe{display:block;width:100%;height:1500px;border:0;background:#EEF1F3}
+.empty{padding:60px 20px;text-align:center;color:var(--muted)}
+.tpl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px}
+.tpl .st{color:var(--muted)}
+.tpl .st b{color:var(--text)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap bar1">
+  <div class="brand">Письмо с котировками<small>DOCX с таблицей цен → готовое HTML-письмо</small></div>
+  <a class="btn" href="../">← Сводка цен</a>
+</div></header>
+
+<main class="wrap grid">
+<section>
+  <div class="card">
+    <h2>1. Таблица цен</h2>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Загрузить DOCX">
+      <b>Перетащите DOCX сюда</b>
+      <span>или нажмите, чтобы выбрать файл</span>
+    </div>
+    <input type="file" id="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+    <div class="msg" id="msg"></div>
+    <p class="hint">В таблице нужны столбцы: Продукт, Дата прихода, Упаковка, $/кг, руб./кг. Курс ЦБ берётся из заголовка «по курсу ЦБ РФ на …».</p>
+  </div>
+
+  <div class="card">
+    <h2>2. Письмо</h2>
+    <div class="row2">
+      <div><label class="f" for="dLetter">Дата котировок</label><input class="i" id="dLetter" type="date"></div>
+      <div><label class="f" for="dRate">Курс ЦБ на</label><input class="i" id="dRate" type="date"></div>
+    </div>
+    <label class="f" for="mName">Менеджер (подпись)</label><input class="i" id="mName" placeholder="Фамилия Имя">
+    <label class="f" for="mMob">Мобильный телефон</label><input class="i" id="mMob" placeholder="+7 (900) 000-00-00">
+    <p class="hint">Имя и телефон запоминаются в этом браузере.</p>
+  </div>
+
+  <div class="card">
+    <h2>3. Оформление</h2>
+    <div class="tpl"><span class="st" id="tplSt">Оформление: ИНГЛИЯ (встроено)</span>
+      <button class="btn" type="button" id="tplBtn">Свой шаблон…</button>
+      <button class="btn" type="button" id="tplDel" hidden>Вернуть Инглию</button>
+    </div>
+    <input type="file" id="tplFile" accept=".json,application/json" hidden>
+    <p class="hint">Логотип, реквизиты и подвал Инглии уже встроены. Свой JSON-шаблон нужен только для другого оформления.</p>
+  </div>
+</section>
+
+<section>
+  <div class="card" id="rowsCard" hidden>
+    <h2>Строки письма <span style="text-transform:none;letter-spacing:0">(можно поправить прямо в таблице)</span></h2>
+    <div class="tblw"><table class="ed" id="ed"><thead><tr><th>Продукт</th><th>Приход в порт СПб</th><th>Упаковка</th><th>$/кг</th><th>руб./кг</th><th></th></tr></thead><tbody></tbody></table></div>
+    <div style="margin-top:8px"><button class="btn" type="button" id="addRow">+ строка</button></div>
+  </div>
+  <div class="actions">
+    <button class="btn pri" type="button" id="copyMail" disabled>Копировать письмо</button>
+    <button class="btn" type="button" id="copyCode" disabled>Копировать HTML-код</button>
+    <button class="btn" type="button" id="dl" disabled>Скачать .html</button>
+  </div>
+  <p class="hint" style="margin:-4px 0 12px">«Копировать письмо» — затем вставить (Ctrl+V) в новое письмо в почте. «HTML-код» — для рассыльщиков (Unisender и т. п.).</p>
+  <div class="pv"><div class="empty" id="empty">Загрузите DOCX — здесь появится письмо</div><iframe id="pv" title="Предпросмотр письма" hidden></iframe></div>
+</section>
+</main>
+
+<script src="jszip.min.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const MONTHS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const ru=s=>{const [y,m,d]=s.split('-');return d+'.'+m+'.'+y};
+const ruLong=s=>{const [y,m,d]=s.split('-');return (+d)+' '+MONTHS[m-1]+' '+y+' г.'};
+
+/* ---------- шаблон компании ---------- */
+const DEFAULT_TPL={"logo": "https://cp.unisender.com/en/v5/user-files?userId=8232550&resource=himg&disposition=inline&name=6d18scpf51fdd1howxybix5i1cj4zxs8p8otdo419d6fgk693ugmipyriftzfdcpskjpdtnz1thx7am5s7js8pfz6b85jtw3kbkaossdrspm1ttunce4irr6gpfngppmuukhf1kptzc5h1ab6kjazfe6q7369xr8nn5j55dp7sohoe6bw7mgix8qnidjfaxenj83pwgjn78e74xq35tbqw1i3yy", "logoW": 268, "logoH": 50, "logoAlt": "ИНГЛИЯ — лучшие ингредиенты для пищевой промышленности со всего мира", "site": "https://www.ingliya.com/", "siteLabel": "www.ingliya.com", "company": "ООО «ИНГЛИЯ»", "address": "198095, г. Санкт-Петербург, ул. Промышленная, д. 38, к. 2, офис 91", "phone": "+7 (812) 200-8-777", "email": "manager@ingliya.com", "feedbackTitle": "Нам важно ваше мнение", "feedbackText": "Цель нашего обращения проста: если что-то из полученного Вами сырья, сам процесс отгрузки/доставки или некомпетентность нашего сотрудника, на Ваш взгляд, окажется недолжного качества, будет повреждение упаковки, плохая постановка на палеты или товар будет плохо упакован, чего-то не будет хватать, либо будет перепутано, возникнет некорректная работа менеджера, проблемы во время доставки сырья или что-то ещё — пожалуйста, не стесняйтесь написать об этом! Пишите сразу на специально созданную для этого почту {email}, обязательно указав дату отгрузки или переговоров и описав проблему! Бывает, что некоторые люди на что-то обижаются и молчат, и только совершенно случайно выясняется, что они на что-то обижены! Или же кому-то просто неловко писать, жаловаться и т.п. А это неверно! Ведь всякое может быть, чего только в жизни не бывает. Порой это всего лишь глупое недоразумение. Любую проблему можно и нужно решать. Но нам лично для решения проблемы нужно хотя бы знать о ней, не так ли? Поэтому пишите! Если сразу не сообщить нам, то мы и проверить, и выявить причину не сможем. Если же Вы напишете нам о проблеме, то мы обязательно и оперативно разберёмся, и Вы останетесь довольны. Так что не сдерживайте себя и не стесняйтесь – пишите, если что-то не так и Вы чем-то недовольны! Причём пишите сразу же, чтобы можно было проверить, найти виновного и ещё устранить причину подобного в будущем, чтобы такого больше никогда не было! Так же будем благодарны Вам и за положительные отзывы о нашей работе.", "feedbackEmail": "dj@ingliya.com", "notice": "Данное сообщение и все его вложения составляют КОММЕРЧЕСКУЮ ТАЙНУ в значении Федерального закона № 98-ФЗ от 29 июля 2004 года «О коммерческой тайне», обладателем которой является ООО «Инглия» ИНН 7805805723."};
+let TPL=DEFAULT_TPL,CUSTOM=false;
+function loadTpl(){const s=LS.get('pismo_tpl');if(s){try{TPL=JSON.parse(s);CUSTOM=true}catch(e){TPL=DEFAULT_TPL}}showTpl()}
+function showTpl(){
+  $('tplSt').innerHTML=CUSTOM?'Свой шаблон: <b>'+esc(TPL.company||'загружен')+'</b>':'Оформление: <b>ИНГЛИЯ</b> (встроено)';
+  $('tplDel').hidden=!CUSTOM;
+}
+$('tplBtn').onclick=()=>$('tplFile').click();
+$('tplDel').onclick=()=>{TPL=DEFAULT_TPL;CUSTOM=false;LS.del('pismo_tpl');showTpl();render()};
+$('tplFile').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{const j=JSON.parse(await f.text());if(typeof j!=='object'||!j)throw 0;TPL=j;CUSTOM=true;LS.set('pismo_tpl',JSON.stringify(j));showTpl();render();say('Шаблон загружен','ok')}
+  catch(err){say('Файл шаблона не читается — нужен JSON','bad')}
+  e.target.value='';
+};
+
+/* ---------- менеджер ---------- */
+for(const [id,k] of [['mName','pismo_name'],['mMob','pismo_mob']]){const v=LS.get(k);if(v)$(id).value=v;$(id).addEventListener('input',()=>{LS.set(k,$(id).value);render()})}
+$('dLetter').value=iso(new Date());$('dRate').value=iso(new Date());
+$('dLetter').addEventListener('input',render);$('dRate').addEventListener('input',render);
+
+/* ---------- сообщения ---------- */
+function say(t,kind){const m=$('msg');m.textContent=t;m.className='msg '+kind}
+
+/* ---------- чтение DOCX ---------- */
+const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+function cellText(tc){
+  return [...tc.getElementsByTagNameNS(W,'p')].map(p=>{
+    let s='';for(const n of p.getElementsByTagNameNS(W,'*')){if(n.localName==='t')s+=n.textContent;else if(n.localName==='tab')s+=' ';else if(n.localName==='br')s+=' '}
+    return s}).join(' ').replace(/ /g,' ').replace(/\s+/g,' ').trim();
+}
+function tableRows(tbl){
+  return [...tbl.children].filter(n=>n.localName==='tr').map(tr=>{
+    const out=[];
+    for(const tc of [...tr.children].filter(n=>n.localName==='tc')){
+      const span=tc.getElementsByTagNameNS(W,'gridSpan')[0];const n=span?+span.getAttributeNS(W,'val')||+span.getAttribute('w:val')||1:1;
+      const t=cellText(tc);for(let i=0;i<n;i++)out.push(i?'':t);
+    }return out});
+}
+function pickCols(h){
+  const f=re=>h.findIndex(x=>re.test(x));
+  return {p:f(/продукт|наименован|товар/i),d:f(/дата|приход|поставк|период/i),k:f(/упаков|фасов/i),u:f(/\$|usd|долл/i),r:f(/руб|₽/i)};
+}
+function fixParen(s){const o=(s.match(/\(/g)||[]).length,c=(s.match(/\)/g)||[]).length;return o>c?s+')'.repeat(o-c):s}
+async function readDocx(file){
+  const zip=await JSZip.loadAsync(file);
+  const xml=await zip.file('word/document.xml')?.async('string');
+  if(!xml)throw new Error('Это не DOCX-файл Word');
+  const doc=new DOMParser().parseFromString(xml,'application/xml');
+  const tbls=[...doc.getElementsByTagNameNS(W,'tbl')];
+  for(const t of tbls){
+    const rows=tableRows(t);
+    const hi=rows.findIndex(r=>r.some(x=>/продукт|наименован/i.test(x))&&r.some(x=>/руб|\$/i.test(x)));
+    if(hi<0)continue;
+    const c=pickCols(rows[hi]);
+    if(c.p<0||(c.u<0&&c.r<0))continue;
+    const head=rows[hi].join(' ');
+    const rm=head.match(/на\s+(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?/i);
+    const data=[];
+    for(const r of rows.slice(hi+1)){
+      const g=i=>i>=0?(r[i]||''):'';
+      const p=fixParen(g(c.p));
+      if(!p||!(g(c.u)||g(c.r)))continue;
+      data.push({p,d:g(c.d),k:g(c.k),u:g(c.u),r:g(c.r)});
+    }
+    if(data.length)return {rows:data,rate:rm?{d:+rm[1],m:+rm[2],y:rm[3]?(rm[3].length===2?2000+ +rm[3]:+rm[3]):null}:null};
+  }
+  throw new Error('В файле не нашлась таблица с колонками «Продукт» и ценами');
+}
+
+/* ---------- строки ---------- */
+let ROWS=[];
+const KEYS=['p','d','k','u','r'];
+function drawRows(){
+  const tb=$('ed').tBodies[0];tb.innerHTML='';
+  ROWS.forEach((row,i)=>{
+    const tr=document.createElement('tr');
+    KEYS.forEach(k=>{const td=document.createElement('td');const dv=document.createElement('div');dv.contentEditable='plaintext-only';if(dv.contentEditable!=='plaintext-only')dv.contentEditable='true';dv.textContent=row[k];dv.oninput=()=>{row[k]=dv.textContent.trim();render()};td.appendChild(dv);tr.appendChild(td)});
+    const x=document.createElement('td');x.className='x';const b=document.createElement('button');b.type='button';b.title='Удалить строку';b.textContent='×';b.onclick=()=>{ROWS.splice(i,1);drawRows();render()};x.appendChild(b);tr.appendChild(x);
+    tb.appendChild(tr);
+  });
+  $('rowsCard').hidden=!ROWS.length;
+}
+$('addRow').onclick=()=>{ROWS.push({p:'',d:'',k:'',u:'',r:''});drawRows();render()};
+
+async function handle(file){
+  if(!file)return;
+  if(!/\.docx$/i.test(file.name)){say('Нужен файл .docx (Word). Старый .doc сохраните в Word как .docx.','bad');return}
+  try{
+    const res=await readDocx(file);
+    ROWS=res.rows;
+    if(res.rate){const y=res.rate.y||new Date().getFullYear();const s=y+'-'+pad(res.rate.m)+'-'+pad(res.rate.d);$('dRate').value=s;$('dLetter').value=s}
+    drawRows();render();
+    say('Прочитано строк: '+ROWS.length+(res.rate?' · курс ЦБ на '+ru($('dRate').value):''),'ok');
+  }catch(e){say(e.message||'Не получилось прочитать файл','bad')}
+}
+const drop=$('drop');
+drop.onclick=()=>$('file').click();
+drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}};
+$('file').onchange=e=>{handle(e.target.files[0]);e.target.value=''};
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('on')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('on')}));
+drop.addEventListener('drop',e=>handle(e.dataTransfer.files[0]));
+
+/* ---------- письмо ---------- */
+const NAVY="#0D3B53",NAVY2="#0A2E41",COP="#E8A595",COPD="#B5654D",TXT="#1F2A30",GREY="#6B7780",LINE="#E6DED9",TINT="#FBF4F1";
+const F="font-family:Arial,Helvetica,sans-serif;";
+const telHref=s=>'tel:'+String(s).replace(/[^\d+]/g,'').replace(/^8(?=\d{10}$)/,'+7');
+function fmtUsd(s){s=String(s).trim();if(!s)return '';return /\$/.test(s)?s:'$'+s}
+function splitRub(s){s=String(s).trim();const m=s.match(/^([\d\s.,]+)\s*(.*)$/);if(!m)return [s,''];return [m[1].trim().replace(/\s/g,'&nbsp;'),m[2]||'руб.']}
+function th(t,al,w){return `<th align="${al||'left'}" ${w||''} style="${F}font-size:11px;line-height:14px;font-weight:bold;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;padding:12px 10px;background-color:${NAVY};">${t}</th>`}
+function build(){
+  const T=TPL||{};
+  const dL=$('dLetter').value||iso(new Date()),dR=$('dRate').value||dL;
+  const name=$('mName').value.trim(),mob=$('mMob').value.trim();
+  const title=T.title||'Котировки на масложировую продукцию';
+  let body='';
+  ROWS.filter(r=>r.p).forEach((r,i)=>{
+    const bg=i%2?TINT:'#FFFFFF';const [num,cur]=splitRub(r.r);
+    body+=`<tr>
+<td bgcolor="${bg}" style="${F}padding:12px 10px;border-bottom:1px solid ${LINE};background-color:${bg};"><div style="font-size:14px;line-height:19px;font-weight:bold;color:${TXT};">${esc(r.p)}</div>${r.k?`<div style="font-size:12px;line-height:16px;color:${GREY};padding-top:2px;">${esc(r.k)}</div>`:''}</td>
+<td bgcolor="${bg}" align="center" style="${F}font-size:13px;line-height:17px;color:${TXT};padding:12px 8px;border-bottom:1px solid ${LINE};background-color:${bg};">${esc(r.d)}</td>
+<td bgcolor="${bg}" align="center" style="${F}font-size:14px;line-height:18px;color:${TXT};padding:12px 8px;border-bottom:1px solid ${LINE};background-color:${bg};white-space:nowrap;">${esc(fmtUsd(r.u))}</td>
+<td bgcolor="${bg}" align="center" style="${F}font-size:17px;line-height:20px;font-weight:bold;color:${COPD};padding:12px 10px;border-bottom:1px solid ${LINE};background-color:${bg};white-space:nowrap;">${num}${cur?`&nbsp;<span style="font-size:12px;font-weight:normal;">${esc(cur)}</span>`:''}</td>
+</tr>`});
+  const contact=(lbl,val,href,accent)=>val?`<tr><td style="${F}font-size:13px;line-height:21px;color:${GREY};padding-right:12px;">${lbl}</td><td style="${F}font-size:13px;line-height:21px;"><a href="${esc(href)}" style="color:${accent?COPD:TXT};text-decoration:none;${accent?'font-weight:bold;':''}">${esc(val)}</a></td></tr>`:'';
+  const site=T.site||'',siteLbl=T.siteLabel||site.replace(/^https?:\/\//,'').replace(/\/$/,'');
+  const header=T.logo?`<tr><td bgcolor="${NAVY}" align="left" class="px" style="background-color:${NAVY};padding:22px 28px 18px 20px;">
+${site?`<a href="${esc(site)}" target="_blank" style="text-decoration:none;">`:''}<img src="${esc(T.logo)}" width="${T.logoW||268}" height="${T.logoH||50}" alt="${esc(T.logoAlt||T.company||'')}" style="display:block;border:0;outline:none;width:${T.logoW||268}px;height:${T.logoH||50}px;${F}font-size:20px;font-weight:bold;color:${COP};">${site?'</a>':''}
+</td></tr>`:`<tr><td bgcolor="${NAVY}" class="px" style="background-color:${NAVY};padding:22px 28px;${F}font-size:20px;font-weight:bold;color:${COP};letter-spacing:1px;">${esc(T.company||'')}&nbsp;</td></tr>`;
+  const fb=T.feedbackText?`<tr><td class="px" style="padding:0 28px 28px 28px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${LINE};"><tr>
+<td style="padding:16px 18px;${F}">
+<div style="font-size:12px;line-height:16px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:${COPD};padding-bottom:6px;">${esc(T.feedbackTitle||'Нам важно ваше мнение')}</div>
+<div style="font-size:12px;line-height:18px;color:${GREY};">${esc(T.feedbackText).replace('{email}',T.feedbackEmail?`<a href="mailto:${esc(T.feedbackEmail)}" style="color:${COPD};font-weight:bold;text-decoration:none;">${esc(T.feedbackEmail)}</a>`:'')}</div>
+</td></tr></table>
+</td></tr>`:'';
+  const footer=(T.company||T.address)?`<tr><td bgcolor="${NAVY}" class="px" style="background-color:${NAVY};padding:22px 28px;${F}font-size:13px;line-height:20px;color:#C9D6DD;">
+${T.company?`<span style="font-size:14px;font-weight:bold;color:${COP};letter-spacing:1px;">${esc(T.company)}</span><br>`:''}
+${T.address?esc(T.address)+'<br>':''}
+${[T.phone?`<a href="${telHref(T.phone)}" style="color:#FFFFFF;text-decoration:none;">${esc(T.phone)}</a>`:'',T.email?`<a href="mailto:${esc(T.email)}" style="color:#FFFFFF;text-decoration:none;">${esc(T.email)}</a>`:'',site?`<a href="${esc(site)}" style="color:#FFFFFF;text-decoration:none;">${esc(siteLbl)}</a>`:''].filter(Boolean).join(' &nbsp;·&nbsp; ')}
+</td></tr>`:'';
+  const notice=T.notice?`<tr><td bgcolor="${NAVY2}" class="px" style="background-color:${NAVY2};padding:14px 28px;${F}font-size:10px;line-height:15px;color:#8FA3AE;">${esc(T.notice)}</td></tr>`:'';
+  return `<!DOCTYPE html>
+<html lang="ru" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<title>${esc(title.toUpperCase().startsWith('КОТИРОВКИ')?'КОТИРОВКИ '+ru(dL)+'г. '+title.replace(/^котировки\s*/i,''):title+' '+ru(dL))}</title>
+<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+<style>
+  @media only screen and (max-width:620px) {
+    .wrap { width:100% !important; }
+    .px { padding-left:16px !important; padding-right:16px !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#EEF1F3;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EEF1F3;">${esc(title)} на ${ru(dL)}.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EEF1F3" style="background-color:#EEF1F3;">
+<tr><td align="center" style="padding:24px 8px;">
+<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+<table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FFFFFF;">
+${header}
+<tr><td bgcolor="${COP}" height="4" style="background-color:${COP};height:4px;line-height:4px;font-size:4px;">&nbsp;</td></tr>
+<tr><td class="px" style="padding:30px 28px 6px 28px;${F}">
+<div style="font-size:12px;line-height:16px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:${COPD};">${esc(T.kicker||'Текущие биржевые цены')}</div>
+<div style="font-size:26px;line-height:32px;font-weight:bold;color:${NAVY};padding-top:6px;">${esc(title)}</div>
+<div style="font-size:15px;line-height:20px;color:${GREY};padding-top:4px;">на ${ruLong(dL)}</div>
+</td></tr>
+<tr><td class="px" style="padding:18px 28px 18px 28px;${F}font-size:15px;line-height:22px;color:${TXT};">
+${esc(T.greeting||'Добрый день!')}<br><br>${esc(T.intro||'Направляю актуальные котировки на сегодняшний день:')}
+</td></tr>
+<tr><td class="px" style="padding:0 28px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${LINE};">
+<tr>${th('Продукт / упаковка')}${th('Приход в порт СПб','center','width="104"')}${th('$/кг<br><span style="font-weight:normal;text-transform:none;">с НДС</span>','center','width="62"')}${th('руб./кг<br><span style="font-weight:normal;text-transform:none;">с НДС</span>','center','width="84"')}</tr>
+${body}
+</table>
+</td></tr>
+<tr><td class="px" style="padding:10px 28px 0 28px;${F}font-size:12px;line-height:17px;color:${GREY};">
+Дата прихода — в порт Санкт-Петербурга. Стоимость в рублях рассчитана <span style="color:${COPD};font-weight:bold;">по курсу ЦБ РФ на ${ru(dR)}</span>.
+</td></tr>
+<tr><td class="px" style="padding:26px 28px 8px 28px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td bgcolor="${TINT}" style="background-color:${TINT};border-left:4px solid ${COP};padding:16px 18px;${F}font-size:15px;line-height:22px;color:${TXT};">
+${esc(T.cta||'При возникновении вопросов звоните в любое удобное время!')}
+</td></tr></table>
+</td></tr>
+<tr><td class="px" style="padding:20px 28px 30px 28px;${F}font-size:14px;line-height:21px;color:${TXT};">
+С уважением,<br>
+${name?`<span style="font-size:16px;font-weight:bold;color:${NAVY};">${esc(name)}</span><br>`:''}
+${T.company?`<span style="color:${GREY};">${esc(T.company)}</span>`:''}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;">
+${contact('Тел./факс',T.phone,telHref(T.phone||''))}${contact('Моб.',mob,telHref(mob))}${contact('Эл. почта',T.email,'mailto:'+(T.email||''),1)}${contact('Сайт',siteLbl,site,1)}
+</table>
+</td></tr>
+${fb}
+${footer}
+${notice}
+</table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr>
+</table>
+</body>
+</html>
+`;
+}
+let HTML='';
+function render(){
+  const has=ROWS.some(r=>r.p);
+  ['copyMail','copyCode','dl'].forEach(id=>$(id).disabled=!has);
+  $('empty').hidden=has;$('pv').hidden=!has;
+  if(!has)return;
+  HTML=build();
+  $('pv').srcdoc=HTML;
+}
+function fname(){return 'Котировки_'+ru($('dLetter').value||iso(new Date())).replace(/\./g,'-')+'.html'}
+$('dl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([HTML],{type:'text/html;charset=utf-8'}));a.download=fname();document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)};
+async function copyText(t){try{await navigator.clipboard.writeText(t);return true}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}ta.remove();return ok}}
+$('copyCode').onclick=async()=>say(await copyText(HTML)?'HTML-код скопирован':'Не удалось скопировать — используйте «Скачать .html»',(await Promise.resolve(1))&&'ok');
+$('copyMail').onclick=async()=>{
+  let ok=false;
+  try{if(window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write){await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([HTML],{type:'text/html'}),'text/plain':new Blob([$('pv').contentDocument?$('pv').contentDocument.body.innerText:''],{type:'text/plain'})})]);ok=true}}catch(e){}
+  if(!ok){try{const d=$('pv').contentDocument;const r=d.createRange();r.selectNodeContents(d.body);const s=d.getSelection();s.removeAllRanges();s.addRange(r);ok=d.execCommand('copy');s.removeAllRanges()}catch(e){}}
+  say(ok?'Письмо скопировано — вставьте его (Ctrl+V) в новое письмо':'Не удалось скопировать — используйте «Скачать .html»',ok?'ok':'bad');
+};
+loadTpl();render();
+})();
+</script>
+</body>
+</html>
