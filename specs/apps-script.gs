@@ -418,6 +418,10 @@ function ostatkiRows_() {
         } else if (dj) { sFrom = sTo = dj; spec = 'подписана'; }
         else { sFrom = ms; sTo = me; spec = 'подписана, ' + MONTHS[mo - 1] + ' ' + y; }
       }
+      else {
+        const wo = weekOf_(r[9], yr, mi + 1);  /* только неделя в J, без месяца */
+        if (wo) { sFrom = wo.from; sTo = wo.to; spec = 'подписана, нед. ' + cellTxt_(r[9]).replace(/^\D+/, ''); }
+      }
       out.push({ month: month, sup: sup.replace(/\s*\(.*$/, '').trim() || sup, product: (pm && pm[1].trim()) || head, client: client, q: qn === null ? '' : qn,
         res: res instanceof Date ? Utilities.formatDate(res, TZ, 'dd.MM') : String(res || '').trim(),
         terms: [cellTxt_(r[5]), cellTxt_(r[6])].filter(Boolean).join(' · '), mgr: cellTxt_(r[7]), done: done, cx: cx,
@@ -477,16 +481,6 @@ function digest_(mgr) {
   sec('🚚', 'Отгрузить на этой неделе', g.week, true);
   sec('🗓', 'Следующие 2 недели', g.soon);
   sec('⏳', 'Позже', g.later);
-  const pref = String(mgr).toLowerCase().slice(0, 3);
-  const b = rows.filter(x => !x.done && !x.cx && !x.spec && x.mgr.toLowerCase().slice(0, 3) === pref);
-  if (b.length) {
-    L.push('📦 <b>Брони без спецификации</b> (' + b.length + ')');
-    byClient_(b, x => x.client).forEach(gr => {
-      L.push('🏢 <b>' + esc_(gr.name) + '</b>');
-      gr.list.forEach(x => L.push('▫️ ' + esc_(x.product) + (x.q !== '' ? ', <b>' + kg_(x.q) + '</b>' : '') + ' · ' + esc_(x.month.toLowerCase())));
-      L.push('');
-    });
-  }
   return L.join('\n').trim();
 }
 /** Понедельник 9:00: каждой — свой план, руководителю — оба. */

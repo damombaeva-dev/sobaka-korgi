@@ -366,7 +366,8 @@ function dIso(v,yr){
 /* I = месяц отгрузки цифрой 1–12 (заполнен = спецификация подписана); J = номер недели, если срок точнее (можно дату) */
 function monthNum(v){if(typeof v==='number')return v>=1&&v<=12&&Math.floor(v)===v?v:0;const m=String(v==null?'':v).trim().match(/^(\d{1,2})(?:\s*мес\.?)?$/i);return m&&+m[1]>=1&&+m[1]<=12?+m[1]:0}
 function win(r,yr,mon){
-  const mi=monthNum(r[8]);if(!mi)return {sFrom:'',sTo:'',sWeek:'',mLab:''};
+  const mi=monthNum(r[8]);
+  if(!mi){const wo=weekOf(r[9],yr,mon);return wo?{sFrom:wo.from,sTo:wo.to,sWeek:'нед. '+String(r[9]).trim().replace(/^\D+/,''),mLab:''}:{sFrom:'',sTo:'',sWeek:'',mLab:''}}
   let y=yr;if(mi<mon-2)y++;
   const ms=y+'-'+pad(mi)+'-01',me=addDays(addMonths(ms,1),-1);
   const wj=weekOf(r[9],y,mi);
@@ -375,7 +376,7 @@ function win(r,yr,mon){
   const dj=dIso(r[9],y);if(dj)return {sFrom:dj,sTo:dj,sWeek:'',mLab:MN[mi-1]};
   return {sFrom:ms,sTo:me,sWeek:'',mLab:MN[mi-1]+' '+y};
 }
-function specOf(r,yr,mon){return monthNum(r[8])?'подписана':''}
+function specOf(r,yr,mon){return monthNum(r[8])||weekOf(r[9],yr,mon)?'подписана':''}
 /* строки Остатков с заполненным столбцом I = подписанные спецификации */
 function excelSpecs(){
   if(!OST)return[];
