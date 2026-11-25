@@ -229,7 +229,7 @@ textarea.i{min-height:60px;resize:vertical}
 <script>
 "use strict";
 (function(){
-const API_URL='';  /* URL веб-приложения Apps Script (…/exec) из specs/apps-script.gs; пусто — хранится только в этом браузере */
+const API_URL='https://script.google.com/macros/s/AKfycbyZGBrtMaUkGJHWlPzZRLStVO0lk4MHjnTx1v6GtMEGqA5cgWwU3TbBuWOrdzYveONwiA/exec';  /* URL веб-приложения Apps Script (…/exec) из specs/apps-script.gs; пусто — хранится только в этом браузере */
 const OSTATKI_SHEET='18f2ag6IcCpKuBrG67i9qDSIGqBbz7B8UwWpDvYFDvNg';
 const MGRS=[{name:'Ольга',key:'olga',cls:'m-olga'},{name:'Анна',key:'anna',cls:'m-anna'}];
 const $=id=>document.getElementById(id);
@@ -286,7 +286,7 @@ async function api(body){
 function take(j){
   ITEMS=(j.items||[]).filter(x=>x&&x.id);
   if(API_URL)LS.set('spec_cache',JSON.stringify(ITEMS));
-  BOT=j.bot||'';LINKED=j.linked||{};specAt=new Date();
+  BOT=j.bot||'damombaevatimelinebot';LINKED=j.linked||{};specAt=new Date();
   render();drawTg();drawStatus();
 }
 async function loadSpecs(){
