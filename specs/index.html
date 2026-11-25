@@ -121,6 +121,19 @@ details.tg summary small{font-weight:500;color:var(--muted)}
 .blab{position:absolute;top:13px;font-size:12px;color:var(--muted);white-space:nowrap}
 .tlgrp{padding:6px 12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--chip);border-bottom:1px solid var(--line)}
 
+.tlbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
+.msum{overflow-x:auto;margin:0 0 14px}
+.msum table{border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13.5px;min-width:100%}
+.msum th,.msum td{padding:7px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.msum th:first-child,.msum td:first-child{text-align:left}
+.msum th{font-size:12px;color:var(--muted);font-weight:600;background:var(--chip)}
+.msum tr:last-child td{border-bottom:0}
+.msum tr.over td:first-child{color:var(--bad);font-weight:600}
+.msum tr.cur td:first-child{color:var(--accent);font-weight:700}
+.msum tr[data-m]{cursor:pointer}.msum tr[data-m]:hover td{background:var(--chip)}
+.msum td small{color:var(--muted)}
+.mhead{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:12px 4px 6px}
+.mhead:first-of-type{margin-top:0}
 /* архив */
 .arch-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding-bottom:50px}
 
@@ -190,7 +203,15 @@ textarea.i{min-height:60px;resize:vertical}
   </details>
 
   <section id="vBoard"><div class="board" id="board"></div></section>
-  <section id="vTimeline" hidden><div class="tlw"><div class="tl" id="tl"></div></div></section>
+  <section id="vTimeline" hidden>
+    <div class="tlbar"><div class="segs" id="scales" role="group" aria-label="Масштаб">
+      <button type="button" class="seg" data-s="weeks" aria-pressed="true">Недели · 3 мес.</button>
+      <button type="button" class="seg" data-s="months" aria-pressed="false">Месяцы · год</button>
+      <button type="button" class="seg" data-s="all" aria-pressed="false">Весь период</button>
+    </div></div>
+    <div class="msum" id="msum"></div>
+    <div class="tlw"><div class="tl" id="tl"></div></div>
+  </section>
   <section id="vArchive" hidden><div class="arch-list" id="arch"></div></section>
 </main>
 
@@ -258,7 +279,8 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 
 /* ---------- состояние ---------- */
 let ITEMS=[],BOT='',LINKED={},OST=null,ostAt=null,specAt=null,BUSY=false,EDIT=null,FILE=null;
-const st={mgr:LS.get('spec_mgr')||'',view:LS.get('spec_view')||'board',q:''};
+const st={mgr:LS.get('spec_mgr')||'',view:LS.get('spec_view')||'board',q:'',scale:LS.get('spec_scale')||'weeks'};
+if(!['weeks','months','all'].includes(st.scale))st.scale='weeks';
 if(!['board','timeline','archive'].includes(st.view))st.view='board';
 
 /* ---------- хранилище ---------- */
@@ -416,35 +438,73 @@ function renderBoard(L,t){
   const by={};COLS.forEach(c=>by[c.k]=[]);
   act.forEach(x=>by[bucket(x,t)].push(x));
   Object.values(by).forEach(a=>a.sort((x,y)=>String(x.to||x.from).localeCompare(String(y.to||y.from))));
+  by.later.sort((x,y)=>String(x.from||x.to).localeCompare(String(y.from||y.to)));
   $('board').innerHTML=COLS.map(c=>'<div class="col '+c.k+'"><h3><span>'+c.t+' <b>'+by[c.k].length+'</b></span><span class="sum">'+sumKg(by[c.k])+'</span></h3>'+
-    (by[c.k].length?by[c.k].map(x=>cardHtml(x,t)).join(''):'<div class="empty-col">'+(c.k==='overdue'?'Ничего не просрочено':'Пусто')+'</div>')+'</div>').join('');
+    (by[c.k].length?(c.k==='later'?byMonth(by[c.k],t):by[c.k].map(x=>cardHtml(x,t)).join('')):'<div class="empty-col">'+(c.k==='overdue'?'Ничего не просрочено':'Пусто')+'</div>')+'</div>').join('');
 }
+const MN=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MS=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const mLabel=ym=>{const [y,m]=ym.split('-');return MN[m-1]+' '+y};
+function byMonth(L,t){let cur='',h='';L.forEach(x=>{const ym=String(x.from||x.to).slice(0,7);if(ym!==cur){cur=ym;h+='<div class="mhead">'+esc(mLabel(ym))+'</div>'}h+=cardHtml(x,t)});return h}
 function renderArchive(L,t){
   const a=L.filter(x=>x.status==='done').sort((x,y)=>String(y.doneAt).localeCompare(String(x.doneAt)));
   $('arch').innerHTML=a.length?a.map(x=>cardHtml(x,t)).join(''):'<div class="empty-col">Отгруженных спецификаций пока нет</div>';
 }
+const monthStart=s=>s.slice(0,7)+'-01';
+const addMonths=(s,n)=>{const [y,m]=s.split('-').map(Number);const d=new Date(Date.UTC(y,m-1+n,1));return d.toISOString().slice(0,10)};
+function renderSummary(act,t){
+  const ms=monthStart(t),rows={},over={};
+  const cols=st.mgr?[mgrOf(st.mgr)||{name:st.mgr}]:MGRS;
+  const add=(o,x)=>{const k=(mgrOf(x.mgr)||{name:'—'}).name;o[k]=o[k]||{n:0,q:0};o[k].n++;o[k].q+=toNum(x.qty)||0;o._n=(o._n||0)+1;o._q=(o._q||0)+(toNum(x.qty)||0)};
+  act.forEach(x=>{if(bucket(x,t)==='overdue'){add(over,x);return}const ym=String(x.to||x.from).slice(0,7);rows[ym]=rows[ym]||{};add(rows[ym],x)});
+  const cell=o=>o&&o.n?o.n+' шт <small>· '+(o.q?Math.round(o.q).toLocaleString('ru-RU')+' кг':'—')+'</small>':'<small>—</small>';
+  const tot=o=>o._n?'<b>'+o._n+' шт</b> <small>· '+(o._q?Math.round(o._q).toLocaleString('ru-RU')+' кг':'—')+'</small>':'';
+  let h='<table><thead><tr><th>Срок отгрузки</th>'+cols.map(c=>'<th>'+esc(c.name)+'</th>').join('')+(cols.length>1?'<th>Итого</th>':'')+'</tr></thead><tbody>';
+  if(over._n)h+='<tr class="over"><td>Срок прошёл</td>'+cols.map(c=>'<td>'+cell(over[c.name])+'</td>').join('')+(cols.length>1?'<td>'+tot(over)+'</td>':'')+'</tr>';
+  Object.keys(rows).sort().forEach(ym=>{const o=rows[ym];
+    h+='<tr data-m="'+ym+'" class="'+(ym===ms.slice(0,7)?'cur':'')+'" title="Показать на таймлайне"><td>'+esc(mLabel(ym))+'</td>'+cols.map(c=>'<td>'+cell(o[c.name])+'</td>').join('')+(cols.length>1?'<td>'+tot(o)+'</td>':'')+'</tr>'});
+  h+='</tbody></table>';
+  $('msum').innerHTML=act.length?h:'';
+}
 function renderTimeline(L,t){
   const act=L.filter(x=>x.status!=='done'&&(x.to||x.from)).sort((x,y)=>String(x.from||x.to).localeCompare(String(y.from||y.to)));
-  const W=14,start=addDays(weekStart(t),-7),end=addDays(start,W*7),span=W*7;
+  document.querySelectorAll('#scales .seg').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===st.scale));
+  renderSummary(act,t);
+  let ticks=[],labels=[],start,end,curTick;
+  if(st.scale==='weeks'){
+    start=addDays(weekStart(t),-7);for(let i=0;i<14;i++){ticks.push(addDays(start,i*7))}end=addDays(start,98);
+    labels=ticks.map(ddmm);curTick=weekStart(t);
+  }else{
+    let a=addMonths(monthStart(t),-1),b=addMonths(monthStart(t),12);
+    if(st.scale==='all'&&act.length){
+      const mn=act.reduce((m,x)=>{const f=x.from||x.to;return f<m?f:m},'9999');const mx=act.reduce((m,x)=>{const e=x.to||x.from;return e>m?e:m},'0000');
+      a=monthStart(mn<a?mn:a);b=addMonths(monthStart(mx),1);if(b<=addMonths(monthStart(t),1))b=addMonths(monthStart(t),2);
+    }
+    for(let d=a;d<b;d=addMonths(d,1))ticks.push(d);start=a;end=b;
+    labels=ticks.map(d=>{const [y,m]=d.split('-');return MS[m-1]+(m==='01'||d===a?' '+y.slice(2):'')});curTick=monthStart(t);
+  }
+  const span=diffDays(start,end);
   const pos=s=>Math.max(0,Math.min(100,diffDays(start,s)/span*100));
-  const wk=[];for(let i=0;i<W;i++)wk.push(addDays(start,i*7));
-  const cur=weekStart(t);
-  let h='<div class="tlh"><div class="lab">Клиент · товар</div><div class="weeks" style="grid-template-columns:repeat('+W+',1fr)">'+
-    wk.map(w=>'<div class="'+(w===cur?'now':'')+'">'+ddmm(w)+'</div>').join('')+'</div></div>';
+  const tl=ticks.map(pos);
+  let h='<div class="tlh"><div class="lab">Клиент · товар</div><div class="weeks" style="grid-template-columns:'+ticks.map((d,i)=>((i<ticks.length-1?tl[i+1]:100)-tl[i]).toFixed(3)+'fr').join(' ')+'">'+
+    ticks.map((d,i)=>'<div class="'+(d===curTick?'now':'')+'" data-tick="'+d.slice(0,7)+'">'+labels[i]+'</div>').join('')+'</div></div>';
   if(!act.length)h+='<div class="empty-col" style="padding:30px">Нет спецификаций со сроками отгрузки</div>';
   const groups=st.mgr?[{name:st.mgr,list:act}]:MGRS.map(m=>({name:m.name,list:act.filter(x=>mgrOf(x.mgr)===m)})).concat([{name:'Другие',list:act.filter(x=>!mgrOf(x.mgr))}]);
-  const lines=wk.map((w,i)=>'<span class="grid-l" style="left:'+(i/W*100)+'%"></span>').join('')+'<span class="today" style="left:'+pos(t)+'%" title="Сегодня"></span>';
+  const lines=tl.map(l=>'<span class="grid-l" style="left:'+l+'%"></span>').join('')+(t>=start&&t<end?'<span class="today" style="left:'+pos(t)+'%" title="Сегодня"></span>':'');
   groups.forEach(g=>{
     if(!g.list.length)return;
     if(!st.mgr)h+='<div class="tlgrp">'+esc(g.name)+' · '+g.list.length+'</div>';
     g.list.forEach(x=>{
       const f=x.from||x.to,e=x.to||x.from;
-      const l=pos(f),r=pos(addDays(e,1));const w=Math.max(r-l,1.6);
+      const before=addDays(e,1)<=start,after=f>=end;
+      const l=pos(f),r=pos(addDays(e,1));const w=Math.max(r-l,1.2);
       const over=bucket(x,t)==='overdue';
       const cls='bar '+mcls(x.mgr)+(over?' over':'')+(f<start?' cut-l':'')+(e>=end?' cut-r':'');
-      const lbl=(x.qty?kg(x.qty)+' · ':'')+(f===e?ddmm(e):ddmm(f)+'–'+ddmm(e));
-      h+='<div class="tlr"><div class="lab"><b>'+esc(x.client)+'</b><span>'+esc(x.product)+(x.supplier?' · '+esc(x.supplier):'')+'</span></div>'+
-        '<div class="track">'+lines+'<div class="'+cls+'" data-id="'+esc(x.id)+'" style="left:'+l+'%;width:'+Math.min(w,100-l)+'%" title="'+esc(x.client+' — '+x.product+', '+lbl)+'">'+(w<14?'':esc(lbl))+'</div>'+(w<14?'<span class="blab" style="left:calc('+(l+w)+'% + 6px)">'+esc(lbl)+'</span>':'')+'</div></div>';
+      const lbl=(x.qty?kg(x.qty)+' · ':'')+(f===e?ddmm(e):ddmm(f)+'–'+ddmm(e))+(before?' ←':after?' →':'');
+      const narrow=w<14;
+      const lx=l+w;
+      h+='<div class="tlr" data-ym="'+e.slice(0,7)+'"><div class="lab"><b>'+esc(x.client)+'</b><span>'+esc(x.product)+(x.supplier?' · '+esc(x.supplier):'')+'</span></div>'+
+        '<div class="track">'+lines+'<div class="'+cls+'" data-id="'+esc(x.id)+'" style="left:'+Math.min(l,100-w)+'%;width:'+Math.min(w,100)+'%" title="'+esc(x.client+' — '+x.product+', '+lbl)+'">'+(narrow?'':esc(lbl))+'</div>'+(narrow?'<span class="blab" style="'+(l+w>75?'right:calc('+(100-Math.min(l,100-w))+'% + 6px)':'left:calc('+lx+'% + 6px)')+'">'+esc(lbl)+'</span>':'')+'</div></div>';
     });
   });
   $('tl').innerHTML=h;
@@ -550,6 +610,11 @@ $('addBtn').onclick=()=>openForm(null);
 $('mgrs').addEventListener('click',e=>{const b=e.target.closest('.seg');if(!b)return;st.mgr=b.dataset.m;LS.set('spec_mgr',st.mgr);render()});
 $('views').addEventListener('click',e=>{const b=e.target.closest('.seg');if(!b)return;st.view=b.dataset.v;LS.set('spec_view',st.view);render()});
 $('q').addEventListener('input',e=>{st.q=e.target.value;render()});
+$('scales').addEventListener('click',e=>{const b=e.target.closest('.seg');if(!b)return;st.scale=b.dataset.s;LS.set('spec_scale',st.scale);render()});
+$('msum').addEventListener('click',e=>{const tr=e.target.closest('tr[data-m]');if(!tr)return;const ym=tr.dataset.m;
+  const t=today();if(st.scale==='weeks'&&(ym<addDays(weekStart(t),-7).slice(0,7)||ym>=addDays(weekStart(t),91).slice(0,7))){st.scale='months';render()}
+  if(st.scale==='months'&&ym>=addMonths(monthStart(t),12).slice(0,7)){st.scale='all';render()}
+  const row=document.querySelector('#tl .tlr[data-ym="'+ym+'"]');if(row){row.scrollIntoView({behavior:'smooth',block:'center'});row.animate([{background:'var(--chip)'},{background:'transparent'}],{duration:1600})}});
 
 drawTg();render();loadSpecs();loadOst();
 setInterval(()=>{if(!document.hidden&&!$('dlg').open)loadSpecs()},60000);
