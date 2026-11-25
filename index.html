@@ -167,8 +167,8 @@ dt{color:var(--muted)}dd{margin:0}
 (function(){
 const root=document.documentElement;
 const PKEY="qm17-pal";
-function applyPal(k){root.dataset.pal=k==="dark"?"dark":"";if(k!=="dark")delete root.dataset.pal;document.querySelectorAll(".pal").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===k));}
-let pal="sage";try{const v=localStorage.getItem(PKEY);if(v==="dark"||v==="sage")pal=v;}catch(e){}
+function applyPal(k){root.dataset.pal=k==="dark"?"dark":"sage";document.querySelectorAll(".pal").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===k));}
+let pal=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"sage";try{const v=localStorage.getItem(PKEY);if(v==="dark"||v==="sage")pal=v;}catch(e){}
 applyPal(pal);
 document.getElementById("pals").addEventListener("click",e=>{const b=e.target.closest(".pal");if(!b)return;applyPal(b.dataset.k);try{localStorage.setItem(PKEY,b.dataset.k)}catch(e){}});
 

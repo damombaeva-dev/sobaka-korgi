@@ -57,6 +57,7 @@ table.ed td div:focus{outline:none;background:var(--chip)}
 table.ed td.x{width:28px;text-align:center}
 table.ed td.x button{border:0;background:none;color:var(--muted);font-size:16px;padding:2px 6px}
 .ed thead th{vertical-align:top}
+.ed tbody td:first-child div{min-width:200px}
 .ed .cn{font-weight:700;color:var(--text);min-width:90px}
 .ed .ct{display:flex;align-items:center;gap:4px;margin-top:4px;font-weight:400}
 .ed .ct select{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:6px;padding:2px 4px;max-width:140px}
@@ -66,6 +67,19 @@ table.ed td.x button{border:0;background:none;color:var(--muted);font-size:16px;
 .ed tbody td div:empty::before{content:'…';color:var(--line)}
 .tbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
 .tbar .dims{margin-left:auto;font-size:12.5px;color:var(--muted)}
+.sv{list-style:none;margin:10px 0 0;padding:0;border-top:1px solid var(--line)}
+.sv li{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.sv li .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sv li .nm small{display:block;color:var(--muted);font-size:12px}
+.sv li.cur .nm{font-weight:700}
+.sv .btn{padding:4px 9px;font-size:13px}
+.svadd{display:flex;gap:8px}
+.svadd input{flex:1}
+.pals{display:flex;gap:6px}
+.pal{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 11px 5px 5px;font-size:13px;color:var(--text)}
+.pal[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--ring)}
+.sw{width:20px;height:20px;border-radius:50%}
+@media(max-width:600px){.pal .lbl{display:none}.pal{padding:5px}}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .pv{background:#EEF1F3;border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .pv iframe{display:block;width:100%;height:1500px;border:0;background:#EEF1F3}
@@ -78,6 +92,10 @@ table.ed td.x button{border:0;background:none;color:var(--muted);font-size:16px;
 <body>
 <header class="top"><div class="wrap bar1">
   <div class="brand">Письмо с котировками<small>Таблица цен (своя или из DOCX) → готовое HTML-письмо</small></div>
+  <div class="pals" id="pals" role="group" aria-label="Оформление страницы">
+    <button type="button" class="pal" data-k="sage" aria-pressed="true"><span class="sw" style="background:#4f7a63;box-shadow:inset 0 0 0 5px #f1f4f0"></span><span class="lbl">Светлый</span></button>
+    <button type="button" class="pal" data-k="dark" aria-pressed="false"><span class="sw" style="background:#d9a46c;box-shadow:inset 0 0 0 5px #1f2228"></span><span class="lbl">Тёмный</span></button>
+  </div>
   <a class="btn" href="../">← Сводка цен</a>
 </div></header>
 
@@ -92,6 +110,14 @@ table.ed td.x button{border:0;background:none;color:var(--muted);font-size:16px;
     <input type="file" id="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
     <div class="msg" id="msg"></div>
     <p class="hint">Таблица из файла попадёт в редактор справа. Без файла таблицу можно собрать вручную: любое число строк и столбцов, свои названия. Можно вставить ячейки из Excel (Ctrl+V).</p>
+  </div>
+
+  <div class="card">
+    <h2>Шаблоны <span id="svMode" style="text-transform:none;letter-spacing:0"></span></h2>
+    <div class="svadd"><input class="i" id="svName" placeholder="Название, например «Масла — Ольга»" aria-label="Название заполнения"><button class="btn pri" type="button" id="svSave">Сохранить</button></div>
+    <ul class="sv" id="svList"></ul>
+    <div class="msg" id="svMsg"></div>
+    <p class="hint" id="svHint">Сохраняются таблица, заголовок, имя и телефон.</p>
   </div>
 
   <div class="card">
@@ -144,6 +170,14 @@ table.ed td.x button{border:0;background:none;color:var(--muted);font-size:16px;
 <script>
 (function(){
 const $=id=>document.getElementById(id);
+/* тема страницы — общая с главной страницей Сводки */
+(function(){const PKEY='qm17-pal',root=document.documentElement;
+  const apply=k=>{root.dataset.pal=k;document.querySelectorAll('.pal').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k))};
+  let k=null;try{k=localStorage.getItem(PKEY)}catch(e){}
+  if(k!=='dark'&&k!=='sage')k=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'sage';
+  apply(k);
+  document.getElementById('pals').addEventListener('click',e=>{const b=e.target.closest('.pal');if(!b)return;apply(b.dataset.k);try{localStorage.setItem(PKEY,b.dataset.k)}catch(_){}});
+})();
 const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const MONTHS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -462,9 +496,78 @@ $('copyMail').onclick=async()=>{
   if(!ok){try{const d=$('pv').contentDocument;const r=d.createRange();r.selectNodeContents(d.body);const s=d.getSelection();s.removeAllRanges();s.addRange(r);ok=d.execCommand('copy');s.removeAllRanges()}catch(e){}}
   say(ok?'Письмо скопировано — вставьте его (Ctrl+V) в новое письмо':'Не удалось скопировать — используйте «Скачать .html»',ok?'ok':'bad');
 };
+/* ---------- шаблоны (общие, в Google Таблице) ---------- */
+const API_URL='';  /* URL веб-приложения Apps Script (…/exec); пусто — шаблоны только в этом браузере */
+let SAVES=[],CUR=LS.get('pismo_cur'),BUSY=false;
+function sayS(t,kind){const m=$('svMsg');m.textContent=t;m.className='msg '+kind}
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const snap=()=>({cols:JSON.parse(JSON.stringify(COLS)),rows:JSON.parse(JSON.stringify(ROWS)),title:$('mTitle').value,mName:$('mName').value,mMob:$('mMob').value});
+const when=t=>{const d=new Date(t);return isNaN(d)?'':pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes())};
+function setList(items){SAVES=(items||[]).filter(x=>x&&x.id&&x.name&&Array.isArray(x.cols));LS.set('pismo_saves',JSON.stringify(SAVES));drawSaves()}
+function cached(){try{const s=JSON.parse(LS.get('pismo_saves')||'[]');return Array.isArray(s)?s:[]}catch(e){return []}}
+async function api(body){
+  if(!API_URL){ /* локальный режим */
+    let L=cached();
+    if(body.action==='save'){const i=L.findIndex(x=>x.id===body.item.id);const it=Object.assign({},body.item,{at:new Date().toISOString()});i>=0?L[i]=it:L.push(it)}
+    else if(body.action==='delete')L=L.filter(x=>x.id!==body.id);
+    return {ok:true,items:L};
+  }
+  const pin=LS.get('pismo_pin');if(pin&&body)body.pin=pin;
+  const r=await fetch(API_URL,body?{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}:{cache:'no-store'});
+  const j=await r.json();
+  if(!j.ok&&j.error==='pin'){const v=prompt(pin?'Код неверный. Введите код для изменения шаблонов':'Введите код для изменения шаблонов');if(!v)throw new Error('Без кода шаблоны не меняются');LS.set('pismo_pin',v.trim());return api(body)}
+  if(!j.ok)throw new Error(j.error==='big'?'Шаблон слишком большой':'Сервер не принял запрос');
+  return j;
+}
+async function run(fn,okText){
+  if(BUSY)return;BUSY=true;sayS('Сохраняю…','ok');
+  try{const j=await fn();if(j&&j.items)setList(j.items);sayS(okText,'ok')}
+  catch(e){sayS((e&&e.message&&!/fetch/i.test(e.message)?e.message:'Нет связи с хранилищем шаблонов')+'. Попробуйте ещё раз.','bad')}
+  finally{BUSY=false}
+}
+async function refresh(){
+  setList(cached());
+  if(!API_URL)return;
+  try{const j=await api(null);setList(j.items)}catch(e){sayS('Не удалось обновить список шаблонов — показан последний сохранённый','bad')}
+}
+function drawSaves(){
+  $('svMode').textContent=API_URL?'(общие для всех)':'(в этом браузере)';
+  $('svHint').textContent='Сохраняются таблица, заголовок, имя и телефон. '+(API_URL?'Шаблоны общие: видны и меняются с любого компьютера.':'Пока хранятся только в этом браузере.');
+  const ul=$('svList');ul.innerHTML='';
+  if(!SAVES.length){const li=document.createElement('li');li.innerHTML='<span class="nm" style="color:var(--muted)">Пока нет шаблонов</span>';ul.appendChild(li);return}
+  SAVES.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru')).forEach(s=>{
+    const li=document.createElement('li');if(s.id===CUR)li.className='cur';
+    const nm=document.createElement('span');nm.className='nm';nm.textContent=s.name;
+    const sm=document.createElement('small');sm.textContent=s.cols.length+' столб. × '+(s.rows||[]).filter(r=>r.some(Boolean)).length+' стр.'+(s.at?' · '+when(s.at):'');nm.appendChild(sm);li.appendChild(nm);
+    const b=(t,title,f)=>{const x=document.createElement('button');x.type='button';x.className='btn';x.textContent=t;x.title=title;x.setAttribute('aria-label',title+': '+s.name);x.onclick=f;li.appendChild(x)};
+    b('Открыть','Открыть',()=>openSave(s));
+    b('✎','Переименовать',()=>{const n=prompt('Новое название',s.name);if(!n||!n.trim())return;const it=Object.assign({},s,{name:n.trim()});run(()=>api({action:'save',item:it}),'Переименовано');if(s.id===CUR)$('svName').value=n.trim()});
+    b('×','Удалить',()=>{if(!confirm('Удалить шаблон «'+s.name+'»'+(API_URL?' у всех':'')+'?'))return;if(CUR===s.id){CUR=null;LS.del('pismo_cur')}run(()=>api({action:'delete',id:s.id}),'Удалено: «'+s.name+'»')});
+    ul.appendChild(li);
+  });
+}
+function openSave(s){
+  COLS=JSON.parse(JSON.stringify(s.cols));ROWS=JSON.parse(JSON.stringify(s.rows||[]));if(!ROWS.length)ROWS=emptyRows(3);
+  $('mTitle').value=s.title||'';
+  if(s.mName){$('mName').value=s.mName;LS.set('pismo_name',s.mName)}
+  if(s.mMob){$('mMob').value=s.mMob;LS.set('pismo_mob',s.mMob)}
+  CUR=s.id;LS.set('pismo_cur',CUR);$('svName').value=s.name;drawRows();changed();drawSaves();
+  sayS('Открыт «'+s.name+'». После правок нажмите «Сохранить», чтобы обновить его.','ok');
+}
+$('svSave').onclick=()=>{
+  const name=$('svName').value.trim();
+  if(!name){$('svName').focus();sayS('Введите название шаблона','bad');return}
+  let s=SAVES.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(s&&s.id!==CUR&&!confirm('Шаблон «'+s.name+'» уже есть. Перезаписать?'))return;
+  const it=Object.assign({id:s?s.id:newId()},snap(),{name});
+  CUR=it.id;LS.set('pismo_cur',CUR);
+  run(()=>api({action:'save',item:it}),'Сохранено: «'+name+'»');
+};
+$('svName').addEventListener('keydown',e=>{if(e.key==='Enter')$('svSave').click()});
+
 $('mTitle').placeholder=(TPL&&TPL.title)||'Котировки на масложировую продукцию';
 $('mTitle').addEventListener('input',render);
-loadTpl();loadTable();drawRows();render();
+loadTpl();loadTable();drawRows();refresh();render();
 })();
 </script>
 </body>
