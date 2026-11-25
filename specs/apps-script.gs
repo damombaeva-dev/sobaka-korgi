@@ -304,9 +304,9 @@ function specText_(it) {
   return (s ? (/^\s*№/.test(s) ? s : '№ ' + s) : 'подписана') + (it.signed ? ' от ' + ru_(it.signed) : '');
 }
 
-/** Одна спецификация в плане: товар и объём, срок, клиент — одной строкой */
+/** Одна спецификация в плане: клиент, товар и объём, срок — одной строкой */
 function line_(it) {
-  return '▫️ <b>' + esc_(it.product) + (it.qty ? ', ' + kg_(it.qty) : '') + '</b> · ' + winShort_(it.from, it.to) + ' · ' + esc_(it.client);
+  return '▫️ <b>' + esc_(it.client) + '</b> · ' + esc_(it.product) + (it.qty ? ', ' + kg_(it.qty) : '') + ' · ' + winShort_(it.from, it.to);
 }
 
 /** Уведомление: крупно товар+объём, срок, клиент; остальное одной строкой курсивом */
@@ -317,9 +317,9 @@ function notifyNew_(it) {
   const small = [esc_(it.mgr), specText_(it) ? 'спец. ' + esc_(specText_(it)) : '',
     it.supplier ? esc_(it.supplier) + (it.supSpec ? ' (спец. ' + esc_(it.supSpec) + ')' : '') : '', it.note ? esc_(it.note) : '']
     .filter(Boolean).join(' · ');
-  const t = '📝 <b>' + esc_(it.product) + (it.qty ? ' — ' + kg_(it.qty) : '') + '</b>\n' +
-    '🚚 <b>' + winText_(it.from, it.to, false) + '</b>' + (days ? '  <i>' + days + '</i>' : '') + '\n' +
-    '🏢 <b>' + esc_(it.client) + '</b>' +
+  const t = '🏢 <b>' + esc_(it.client) + '</b>\n' +
+    '📦 <b>' + esc_(it.product) + (it.qty ? ' — ' + kg_(it.qty) : '') + '</b>\n' +
+    '🚚 <b>' + winText_(it.from, it.to, false) + '</b>' + (days ? '  <i>' + days + '</i>' : '') +
     (small ? '\n<blockquote expandable>' + small.split(' · ').join('\n') + '</blockquote>' : '');
   const btn = [];
   if (it.fileUrl) btn.push(['📎 Файл', it.fileUrl]);
@@ -471,7 +471,7 @@ function digest_(mgr) {
   const b = rows.filter(x => !x.done && !x.cx && !x.spec && x.mgr.toLowerCase().slice(0, 3) === pref);
   if (b.length) {
     L.push('📦 <b>Брони без спецификации</b> (' + b.length + ')');
-    b.forEach(x => L.push('▫️ <b>' + esc_(x.product) + (x.q !== '' ? ', ' + kg_(x.q) : '') + '</b> · ' + esc_(x.month.toLowerCase()) + ' · ' + esc_(x.client)));
+    b.forEach(x => L.push('▫️ <b>' + esc_(x.client) + '</b> · ' + esc_(x.product) + (x.q !== '' ? ', ' + kg_(x.q) : '') + ' · ' + esc_(x.month.toLowerCase())));
     L.push('');
   }
   return L.join('\n').trim();
