@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-24T13:00:00+03:00",
+ "updated": "2026-11-25T09:30:00+03:00",
  "prices": [
   {
    "_id": "2026-11-13_kontur-pko",
@@ -4814,6 +4814,25 @@
    "delivery": "приход в Россию июль 2027",
    "terms": "без НДС, СПб",
    "note": "Юлия Д. из MAX"
+  },
+  {
+   "_id": "2026-11-24_op-coco-medalia_1639",
+   "date": "2026-11-24",
+   "time": "16:39",
+   "key": "op-coco-medalia",
+   "cat": "coconut",
+   "group": "Кокосовое масло",
+   "product": "Кокосовое масло MEDALIA RBD CNO",
+   "supplier": "Оил Партнерс",
+   "price": 2.656,
+   "cur": "USD",
+   "spec": "",
+   "origin": "",
+   "pack": "",
+   "qty": "20 т",
+   "delivery": "июнь–июль 2027",
+   "terms": "отсрочка 14 дней",
+   "note": "Юлия Д. из MAX; спец. 94"
   }
  ],
  "pending": [
