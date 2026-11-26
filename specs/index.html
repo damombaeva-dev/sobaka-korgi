@@ -137,6 +137,15 @@ details.tg summary small{font-weight:500;color:var(--muted)}
 .msum tr.cur td:first-child{color:var(--accent);font-weight:700}
 .msum tr[data-m]{cursor:pointer}.msum tr[data-m]:hover td{background:var(--chip)}
 .msum td small{color:var(--muted)}
+.msum tr[data-m] td:first-child::before{content:'▸';display:inline-block;width:14px;color:var(--muted);transition:transform .15s}
+.msum tr.open td:first-child::before{transform:rotate(90deg)}
+.msum tr.det td{padding:0 12px 10px;text-align:left;white-space:normal;background:var(--chip)}
+.msum tr.det:hover td{background:var(--chip)}
+.mdl{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:4px 14px;font-size:13px;padding-top:8px;align-items:baseline}
+.mdl .c{font-weight:600}.mdl .q{font-weight:700;text-align:right;white-space:nowrap}.mdl .d,.mdl .m{color:var(--muted);white-space:nowrap;font-size:12px}
+.mdl .p{color:var(--ink)}.mdl .p small{color:var(--muted)}
+.mdl a{grid-column:1/-1;font-size:12px;color:var(--accent);cursor:pointer;justify-self:start}
+@media(max-width:640px){.mdl{grid-template-columns:1fr auto}.mdl .d,.mdl .m{display:none}.mdl .p{grid-column:1/-1;margin:-2px 0 4px}}
 .mhead{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:12px 4px 6px}
 .mhead:first-of-type{margin-top:0}
 /* архив */
@@ -290,6 +299,7 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 
 /* ---------- состояние ---------- */
 let ITEMS=[],BOT='',LINKED={},OST=null,ostAt=null,specAt=null,BUSY=false,EDIT=null,FILE=null;
+const MOPEN=new Set();
 const st={mgr:LS.get('spec_mgr')||'',view:LS.get('spec_view')||'board',q:'',scale:LS.get('spec_scale')||'weeks'};
 if(!['weeks','months','all'].includes(st.scale))st.scale='weeks';
 st.group=LS.get('spec_group')||'mgr';if(!['mgr','cat','client'].includes(st.group))st.group='mgr';
@@ -533,13 +543,19 @@ function renderSummary(act,t){
   const ms=monthStart(t),rows={},over={};
   const cols=st.mgr?[mgrOf(st.mgr)||{name:st.mgr}]:MGRS;
   const add=(o,x)=>{const k=(mgrOf(x.mgr)||{name:'—'}).name;o[k]=o[k]||{n:0,q:0};o[k].n++;o[k].q+=toNum(x.qty)||0;o._n=(o._n||0)+1;o._q=(o._q||0)+(toNum(x.qty)||0)};
-  act.forEach(x=>{if(bucket(x,t)==='overdue'){add(over,x);return}const ym=String(x.to||x.from).slice(0,7);rows[ym]=rows[ym]||{};add(rows[ym],x)});
+  const lists={};
+  act.forEach(x=>{if(bucket(x,t)==='overdue'){add(over,x);(lists.over=lists.over||[]).push(x);return}const ym=String(x.to||x.from).slice(0,7);rows[ym]=rows[ym]||{};add(rows[ym],x);(lists[ym]=lists[ym]||[]).push(x)});
+  const ncol=cols.length+(cols.length>1?2:1);
+  const det=(k,go)=>{if(!MOPEN.has(k))return '';const L=(lists[k]||[]).slice().sort((a,b)=>clientOf(a).localeCompare(clientOf(b),'ru')||String(a.from||a.to).localeCompare(String(b.from||b.to)));
+    return '<tr class="det"><td colspan="'+ncol+'"><div class="mdl">'+L.map(x=>{const w=x.week?x.week:x.mlab&&!/\d{2}\./.test(x.mlab)?x.mlab:(x.from&&x.to&&x.from!==x.to?ddmm(x.from)+'–'+ddmm(x.to):ddmm(x.to||x.from));
+      return '<span class="c">'+esc(clientOf(x))+'</span><span class="p">'+esc(x.product||'—')+(x.supplier?' <small>· '+esc(x.supplier)+'</small>':'')+'</span><span class="q">'+(x.qty?esc(kg(x.qty)):'—')+'</span><span class="d">'+esc(w||'')+'</span><span class="m">'+esc((mgrOf(x.mgr)||{name:x.mgr||''}).name)+'</span>'}).join('')+
+      (go?'<a data-go="'+k+'">Показать на таймлайне →</a>':'')+'</div></td></tr>'};
   const cell=o=>o&&o.n?o.n+' шт <small>· '+(o.q?Math.round(o.q).toLocaleString('ru-RU')+' кг':'—')+'</small>':'<small>—</small>';
   const tot=o=>o._n?'<b>'+o._n+' шт</b> <small>· '+(o._q?Math.round(o._q).toLocaleString('ru-RU')+' кг':'—')+'</small>':'';
   let h='<table><thead><tr><th>Срок отгрузки</th>'+cols.map(c=>'<th>'+esc(c.name)+'</th>').join('')+(cols.length>1?'<th>Итого</th>':'')+'</tr></thead><tbody>';
-  if(over._n)h+='<tr class="over"><td>Срок прошёл</td>'+cols.map(c=>'<td>'+cell(over[c.name])+'</td>').join('')+(cols.length>1?'<td>'+tot(over)+'</td>':'')+'</tr>';
+  if(over._n)h+='<tr class="over'+(MOPEN.has('over')?' open':'')+'" data-m="over" title="Показать список"><td>Срок прошёл</td>'+cols.map(c=>'<td>'+cell(over[c.name])+'</td>').join('')+(cols.length>1?'<td>'+tot(over)+'</td>':'')+'</tr>'+det('over',false);
   Object.keys(rows).sort().forEach(ym=>{const o=rows[ym];
-    h+='<tr data-m="'+ym+'" class="'+(ym===ms.slice(0,7)?'cur':'')+'" title="Показать на таймлайне"><td>'+esc(mLabel(ym))+'</td>'+cols.map(c=>'<td>'+cell(o[c.name])+'</td>').join('')+(cols.length>1?'<td>'+tot(o)+'</td>':'')+'</tr>'});
+    h+='<tr data-m="'+ym+'" class="'+(ym===ms.slice(0,7)?'cur':'')+(MOPEN.has(ym)?' open':'')+'" title="Показать список"><td>'+esc(mLabel(ym))+'</td>'+cols.map(c=>'<td>'+cell(o[c.name])+'</td>').join('')+(cols.length>1?'<td>'+tot(o)+'</td>':'')+'</tr>'+det(ym,true)});
   h+='</tbody></table>';
   $('msum').innerHTML=act.length?h:'';
 }
@@ -703,7 +719,8 @@ $('views').addEventListener('click',e=>{const b=e.target.closest('.seg');if(!b)r
 $('q').addEventListener('input',e=>{st.q=e.target.value;render()});
 $('groups').addEventListener('click',e=>{const b=e.target.closest('.seg');if(!b)return;st.group=b.dataset.g;LS.set('spec_group',st.group);render()});
 $('scales').addEventListener('click',e=>{const b=e.target.closest('.seg');if(!b)return;st.scale=b.dataset.s;LS.set('spec_scale',st.scale);render()});
-$('msum').addEventListener('click',e=>{const tr=e.target.closest('tr[data-m]');if(!tr)return;const ym=tr.dataset.m;
+$('msum').addEventListener('click',e=>{const tr=e.target.closest('tr[data-m]');if(tr){const k=tr.dataset.m;MOPEN.has(k)?MOPEN.delete(k):MOPEN.add(k);render();return}
+  const a=e.target.closest('a[data-go]');if(!a)return;const ym=a.dataset.go;
   const t=today();if(st.scale==='weeks'&&(ym<addDays(weekStart(t),-7).slice(0,7)||ym>=addDays(weekStart(t),91).slice(0,7))){st.scale='months';render()}
   if(st.scale==='months'&&ym>=addMonths(monthStart(t),12).slice(0,7)){st.scale='all';render()}
   const row=document.querySelector('#tl .tlr[data-ym="'+ym+'"]');if(row){row.scrollIntoView({behavior:'smooth',block:'center'});row.animate([{background:'var(--chip)'},{background:'transparent'}],{duration:1600})}});
