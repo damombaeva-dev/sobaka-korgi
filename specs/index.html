@@ -628,8 +628,8 @@ function drawTg(){
   const n=MGRS.filter(m=>LINKED[m.key]).length;
   $('tgSum').textContent=on?'· подключено '+n+' из '+MGRS.length:'· не настроено';
   if(!on)return;
-  const rows=MGRS.map(m=>({who:m.name,key:m.key,mgr:m.name})).concat([{who:'Руководитель (копии всего)',key:'all',mgr:''}]);
-  $('tgRows').innerHTML=rows.map(r=>'<div class="tgrow"><span class="who"><b>'+esc(r.who)+'</b></span>'+
+  const rows=MGRS.map(m=>({who:m.name,key:m.key,mgr:m.name})).concat([{who:'Руководители',key:'boss',mgr:'boss',note:'копии всех уведомлений и план по обоим менеджерам; каждый открывает ссылку у себя в Telegram'},{who:'Тех. поддержка',key:'support',mgr:'support',note:'сообщения о сбоях, команда /status'},{who:'Копии всего (Аида)',key:'all',mgr:''}]);
+  $('tgRows').innerHTML=rows.map(r=>'<div class="tgrow"><span class="who"><b>'+esc(r.who)+'</b>'+(r.note?'<br><small class="muted">'+esc(r.note)+'</small>':'')+'</span>'+
     '<a class="btn sm" href="https://t.me/'+encodeURIComponent(BOT)+'?start='+r.key+'" target="_blank" rel="noopener">Подключить Telegram</a>'+
     (LINKED[r.key]?'<span class="ok-t">✓ подключено'+(LINKED[r.key]>1?' ('+LINKED[r.key]+')':'')+'</span><button type="button" class="btn sm" data-test="'+esc(r.mgr)+'">Проверить</button>':'<span class="muted" style="font-size:13px">ещё не подключено</span>')+'</div>').join('');
 }
