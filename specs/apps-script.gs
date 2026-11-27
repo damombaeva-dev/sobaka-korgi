@@ -16,7 +16,11 @@ const PIN = '';         // код для изменений на сайте; п�
 
 const OSTATKI_ID = '18f2ag6IcCpKuBrG67i9qDSIGqBbz7B8UwWpDvYFDvNg'; // Google Таблица остатков
 const MANAGERS = { olga: 'Ольга', anna: 'Анна' };                   // ключ ссылки → имя менеджера
-const ALL = 'all';                                                   // ключ для «копии всего» (руководитель)
+const ALL = 'all';                                                   // ключ для «копии всего»
+const BOSS = 'boss';                                                 // руководители: копии всего + план по обоим менеджерам
+const SUPPORT = 'support';                                           // тех. поддержка: сообщения о сбоях
+const COPY = [ALL, BOSS];                                            // кто получает копии всех уведомлений
+const ROLE_NAMES = { all: 'копии всех уведомлений', boss: 'руководитель (копии всего и план по обоим менеджерам)', support: 'тех. поддержка (сообщения о сбоях)' };
 const TZ = 'Europe/Moscow';
 const SITE = 'https://damombaeva-dev.github.io/sobaka-korgi/specs/';
 const COLS = ['id', 'mgr', 'client', 'product', 'qty', 'supplier', 'supSpec', 'ourSpec', 'signed', 'from', 'to',
@@ -65,6 +69,7 @@ function doPost(e) {
     else if (a === 'test') testMessage_(body.mgr);
     else if (a !== 'list') return json_({ ok: false, error: 'bad' });
   } catch (err) {
+    if (!/Заполните|не подключён/.test(String(err && err.message || err))) alert_('сайт, действие «' + body.action + '»', err);
     return json_({ ok: false, error: String(err && err.message || err) });
   } finally {
     lock.releaseLock();
@@ -75,7 +80,7 @@ function doPost(e) {
 function state_() {
   const ch = chats_();
   const linked = {};
-  Object.keys(MANAGERS).concat([ALL]).forEach(k => linked[k] = (ch[k] || []).length);
+  Object.keys(MANAGERS).concat(COPY, [SUPPORT]).forEach(k => linked[k] = (ch[k] || []).length);
   return { ok: true, items: readAll_().map(x => { delete x._row; return x; }), bot: props_().getProperty('BOT_NAME') || '', linked: linked, pin: !!PIN };
 }
 
@@ -225,12 +230,37 @@ function send_(chat, text, buttons) {
 
 function chats_() { try { return JSON.parse(props_().getProperty('CHATS') || '{}'); } catch (e) { return {}; } }
 function mgrKey_(name) { const n = String(name || '').toLowerCase(); return Object.keys(MANAGERS).find(k => n.indexOf(MANAGERS[k].toLowerCase().slice(0, 3)) === 0) || ''; }
-function chatsFor_(mgr) { const ch = chats_(); const k = mgrKey_(mgr); return [].concat(k ? ch[k] || [] : [], ch[ALL] || []).filter((x, i, a) => a.indexOf(x) === i); }
+function chatsFor_(mgr) { const ch = chats_(); const k = mgrKey_(mgr); return [].concat(k ? ch[k] || [] : [], ch[ALL] || [], ch[BOSS] || []).filter((x, i, a) => a.indexOf(x) === i); }
+
+function roleChats_(role) { return (chats_()[role] || []).slice(); }
+
+/** Сообщение тех. поддержке о сбое (одна и та же ошибка не чаще раза в час). */
+function alert_(where, err) {
+  try {
+    const msg = String(err && err.message || err).slice(0, 300);
+    const p = props_(), key = 'ALERT_' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, where + msg)).slice(0, 8);
+    const last = +(p.getProperty(key) || 0);
+    if (Date.now() - last < 3600e3) return;
+    p.setProperty(key, String(Date.now()));
+    roleChats_(SUPPORT).forEach(c => send_(c, '🛠 <b>Сбой: ' + esc_(where) + '</b>\n<code>' + esc_(msg) + '</code>\n<i>' + now_() + '</i>', [['Спецификации', SITE]]));
+  } catch (e) { Logger.log(e); }
+}
+
+function status_() {
+  let ost = 'не прочитаны';
+  try { const r = ostatkiRows_(); ost = r.length + ' строк, спецификаций: ' + excelSpecs_(r).length; } catch (e) { ost = 'ошибка: ' + esc_(e.message || e); }
+  const ch = chats_(), n = k => (ch[k] || []).length;
+  return '🛠 <b>Состояние доски спецификаций</b>\n' +
+    'Записей в хранилище: ' + readAll_().length + '\n' +
+    'Остатки: ' + ost + '\n' +
+    'Подключены: Ольга ' + n('olga') + ', Анна ' + n('anna') + ', руководители ' + n(BOSS) + ', копии ' + n(ALL) + ', поддержка ' + n(SUPPORT) + '\n' +
+    'Триггеров: ' + ScriptApp.getProjectTriggers().length + '\n<i>' + now_() + '</i>';
+}
 
 /** Читает новые сообщения боту: /start olga — подключить Ольгу, /week — план сейчас, /stop — отключить. Запускается по таймеру. */
 function pollTelegram() {
   if (!BOT_TOKEN) return;
-  try { checkExcelSpecs_(ostatkiRows_()); } catch (e) { Logger.log(e); }
+  try { checkExcelSpecs_(ostatkiRows_()); } catch (e) { Logger.log(e); alert_('чтение Остатков', e); }
   const p = props_();
   const off = +(p.getProperty('TG_OFFSET') || 0);
   const r = tg_('getUpdates', { offset: off, timeout: 0, allowed_updates: ['message'] });
@@ -245,19 +275,23 @@ function pollTelegram() {
     const st = t.match(/^\/start(?:\s+(\S+))?/i);
     if (st) {
       const k = String(st[1] || '').toLowerCase();
-      if (!MANAGERS[k] && k !== ALL) { send_(id, 'Здравствуйте! Чтобы получать напоминания, откройте ссылку «Подключить Telegram» на странице спецификаций:\n' + SITE); return; }
+      if (!MANAGERS[k] && COPY.indexOf(k) < 0 && k !== SUPPORT) { send_(id, 'Здравствуйте! Чтобы получать напоминания, откройте ссылку «Подключить Telegram» на странице спецификаций:\n' + SITE); return; }
       ch[k] = ch[k] || [];
       if (ch[k].indexOf(id) < 0) ch[k].push(id);
-      const who = k === ALL ? 'копии всех уведомлений (Ольга и Анна)' : 'напоминания для: ' + MANAGERS[k];
-      send_(id, '✅ Подключено: ' + who + '.\n\nБуду писать, когда добавлена новая спецификация, и каждый понедельник в 9:00 присылать план отгрузок и броней.\n\n/week — план прямо сейчас\n/stop — отключить');
+      if (k === SUPPORT) { send_(id, '✅ Подключено: тех. поддержка.\n\nБуду писать, если что-то сломается: не читаются Остатки, ошибка при сохранении спецификации, сбой рассылки.\n\n/status — проверить состояние сейчас\n/stop — отключить'); return; }
+      const who = ROLE_NAMES[k] || 'напоминания для: ' + MANAGERS[k];
+      send_(id, '✅ Подключено: ' + who + '.\n\nБуду писать, когда добавлена новая спецификация, и каждый понедельник в 9:00 присылать план отгрузок.\n\n/week — план прямо сейчас\n/stop — отключить');
     } else if (/^\/stop/i.test(t)) {
       Object.keys(ch).forEach(k => ch[k] = (ch[k] || []).filter(x => x !== id));
       send_(id, 'Напоминания отключены. Подключить снова: ' + SITE);
+    } else if (/^\/status/i.test(t)) {
+      if ((ch[SUPPORT] || []).indexOf(id) < 0) send_(id, 'Команда для тех. поддержки.');
+      else send_(id, status_());
     } else if (/^\/(week|plan|неделя)/i.test(t)) {
       const keys = Object.keys(ch).filter(k => (ch[k] || []).indexOf(id) >= 0);
       if (!keys.length) send_(id, 'Этот чат ещё не подключён. Откройте ссылку «Подключить Telegram» на ' + SITE);
       p.setProperty('CHATS', JSON.stringify(ch));
-      keys.forEach(k => (k === ALL ? Object.keys(MANAGERS) : [k]).forEach(mk => send_(id, digest_(MANAGERS[mk]), [['Все спецификации', SITE]])));
+      keys.filter(k => k !== SUPPORT).forEach(k => (COPY.indexOf(k) >= 0 ? Object.keys(MANAGERS) : [k]).forEach(mk => send_(id, digest_(MANAGERS[mk]), [['Все спецификации', SITE]])));
     } else {
       send_(id, 'Команды: /week — план на неделю, /stop — отключить напоминания.\nСпецификации: ' + SITE);
     }
@@ -318,6 +352,7 @@ function line_(it) {
 
 /** Уведомление: крупно товар+объём, срок, клиент; остальное одной строкой курсивом */
 function notifyNew_(it) {
+  if (/^\s*ТЕСТ/i.test(it.client || '')) return;                    // тестовые записи без уведомлений
   const chats = chatsFor_(it.mgr);
   if (!chats.length) return;
   const days = daysText_(it);
@@ -335,6 +370,12 @@ function notifyNew_(it) {
 }
 
 function testMessage_(mgr) {
+  if (mgr === BOSS || mgr === SUPPORT) {
+    const c = roleChats_(mgr);
+    if (!c.length) throw new Error('Telegram ещё не подключён');
+    c.forEach(x => send_(x, mgr === SUPPORT ? status_() : '🔔 Проверка: уведомления для руководителя работают.'));
+    return;
+  }
   const chats = chatsFor_(mgr || '');
   if (!chats.length) throw new Error('Для ' + (mgr || 'этого менеджера') + ' Telegram ещё не подключён');
   chats.forEach(c => send_(c, '🔔 Проверка: напоминания по спецификациям работают' + (mgr ? ' (' + esc_(mgr) + ')' : '') + '.'));
@@ -485,10 +526,14 @@ function digest_(mgr) {
 }
 /** Понедельник 9:00: каждой — свой план, руководителю — оба. */
 function weeklyDigest() {
+  try { weeklyDigest_(); } catch (e) { alert_('недельный план', e); throw e; }
+}
+function weeklyDigest_() {
   const ch = chats_();
   Object.keys(MANAGERS).forEach(k => {
     const text = digest_(MANAGERS[k]);
     (ch[k] || []).forEach(c => send_(c, text, [['Все спецификации', SITE]]));
-    (ch[ALL] || []).forEach(c => { if ((ch[k] || []).indexOf(c) < 0) send_(c, text, [['Все спецификации', SITE]]); });
+    [].concat(ch[ALL] || [], ch[BOSS] || []).filter((c, i, a) => a.indexOf(c) === i)
+      .forEach(c => { if ((ch[k] || []).indexOf(c) < 0) send_(c, text, [['Все спецификации', SITE]]); });
   });
 }
